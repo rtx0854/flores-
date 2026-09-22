@@ -1,0 +1,867 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Para ti, que eres tan especial - BTS Experience</title>
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Google Fonts: Playfair Display & Plus Jakarta Sans -->
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,600;0,700;1,400&family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap">
+    <!-- FontAwesome for icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <!-- Three.js for 3D universe background -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+
+    <style>
+        body, html {
+            margin: 0;
+            padding: 0;
+            width: 100%;
+            height: 100%;
+            overflow: hidden;
+            font-family: 'Plus Jakarta Sans', sans-serif;
+            user-select: none;
+            background-color: #09050d;
+        }
+
+        .serif-font {
+            font-family: 'Playfair Display', serif;
+        }
+
+        /* Slide Deck Container */
+        .slide-deck {
+            position: relative;
+            width: 100vw;
+            height: 100vh;
+        }
+
+        .slide {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 0.6s ease-in-out;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            box-sizing: border-box;
+            overflow-y: auto;
+        }
+
+        .slide.active {
+            opacity: 1;
+            pointer-events: auto;
+        }
+
+        /* Animations */
+        @keyframes sway {
+            0%, 100% { transform: rotate(-4deg); }
+            50% { transform: rotate(4deg); }
+        }
+        @keyframes float-cloud {
+            0% { transform: translateX(-150px); opacity: 0.3; }
+            100% { transform: translateX(calc(100vw + 150px)); opacity: 0.3; }
+        }
+        @keyframes firefly {
+            0%, 100% { transform: translateY(0) translateX(0) scale(1); opacity: 0.3; }
+            50% { transform: translateY(-45px) translateX(30px) scale(1.2); opacity: 0.9; }
+        }
+        @keyframes pulse-glow {
+            0%, 100% { box-shadow: 0 0 20px rgba(168, 85, 247, 0.4); }
+            50% { box-shadow: 0 0 50px rgba(168, 85, 247, 0.8); }
+        }
+        @keyframes spin-slow {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .swaying-flower {
+            animation: sway 4s ease-in-out infinite alternate;
+            transform-origin: bottom center;
+            filter: drop-shadow(0 6px 10px rgba(0,0,0,0.18));
+        }
+        .firefly-particle {
+            animation: firefly 4.5s ease-in-out infinite;
+        }
+        .spinning-disc {
+            animation: spin-slow 10s linear infinite;
+        }
+
+        /* Animated grass ground (SVG blades, scales identically on any device) */
+        @keyframes grass-sway {
+            0%, 100% { transform: rotate(-4deg); }
+            50% { transform: rotate(4deg); }
+        }
+        .grass-blade {
+            animation-name: grass-sway;
+            animation-timing-function: ease-in-out;
+            animation-iteration-count: infinite;
+            transform-box: fill-box;
+            transform-origin: bottom center;
+        }
+        .grass-ground {
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            width: 100%;
+            pointer-events: none;
+        }
+
+        /* Shimmering title */
+        @keyframes shimmer-text {
+            0% { background-position: 0% 50%; }
+            100% { background-position: 200% 50%; }
+        }
+        .shimmer-title {
+            background: linear-gradient(90deg, #f3e8ff 0%, #e9d5ff 25%, #ffffff 50%, #e9d5ff 75%, #f3e8ff 100%);
+            background-size: 200% auto;
+            -webkit-background-clip: text;
+            background-clip: text;
+            -webkit-text-fill-color: transparent;
+            animation: shimmer-text 6s linear infinite;
+        }
+
+        /* Gentle glow ring around the start button */
+        @keyframes glow-ring {
+            0%, 100% { box-shadow: 0 0 0 0 rgba(120,53,15,0.0), 0 10px 25px rgba(88,28,135,0.25); }
+            50% { box-shadow: 0 0 0 8px rgba(253,224,71,0.15), 0 10px 25px rgba(88,28,135,0.35); }
+        }
+        #start-btn { animation: glow-ring 2.6s ease-in-out infinite; }
+
+        /* Soft entrance animation for slide content */
+        @keyframes rise-in {
+            0% { opacity: 0; transform: translateY(18px) scale(0.98); }
+            100% { opacity: 1; transform: translateY(0) scale(1); }
+        }
+        .slide.active > .entrance {
+            animation: rise-in 0.7s cubic-bezier(0.22, 1, 0.36, 1) both;
+        }
+
+        .nav-btn:hover i { transform: scale(1.15); }
+        .nav-btn i { transition: transform 0.3s ease; }
+
+        /* Custom scrollbar for slides */
+        ::-webkit-scrollbar {
+            width: 6px;
+        }
+        ::-webkit-scrollbar-track {
+            background: rgba(0,0,0,0.1);
+        }
+        ::-webkit-scrollbar-thumb {
+            background: rgba(192, 132, 252, 0.3);
+            border-radius: 10px;
+        }
+
+        /* Song card active state (currently playing) */
+        .song-card.is-playing {
+            border-color: rgba(192, 132, 252, 0.7);
+            box-shadow: 0 0 0 2px rgba(192, 132, 252, 0.35), 0 8px 24px rgba(88, 28, 135, 0.35);
+            background: rgba(192, 132, 252, 0.08);
+        }
+    </style>
+</head>
+<body>
+
+    <!-- Hidden Audio Elements for Local Folders (assets/musica/) -->
+    <!-- You can drop your mp3 files inside assets/musica/ folder -->
+    <audio id="audio-inicio" loop src="assets/musica/inicio.mp3"></audio>
+    <audio id="audio-menu" loop src="assets/musica/menu.mp3"></audio>
+    <audio id="audio-exitos"></audio>
+
+    <div class="slide-deck">
+
+        <!-- ================= SLIDE 1: INICIO FLORES AMARILLAS ================= -->
+        <div id="slide-inicio" class="slide active bg-gradient-to-br from-amber-100 via-yellow-200 to-amber-300 p-6 md:p-12">
+            <!-- Soft vignette for depth -->
+            <div class="absolute inset-0 pointer-events-none" style="background: radial-gradient(circle at center, transparent 40%, rgba(120,53,15,0.12) 100%);"></div>
+
+            <!-- Floating Clouds Background -->
+            <div class="absolute top-10 left-[-100px] text-5xl opacity-40 pointer-events-none" style="animation: float-cloud 28s linear infinite;">☁️</div>
+            <div class="absolute top-24 left-[-180px] text-4xl opacity-30 pointer-events-none" style="animation: float-cloud 38s linear infinite 5s;">☁️</div>
+            <div class="absolute top-16 right-[-100px] text-6xl opacity-35 pointer-events-none" style="animation: float-cloud 32s linear infinite 12s; transform: scaleX(-1);">☁️</div>
+
+            <!-- Floating Fireflies -->
+            <div class="absolute top-1/4 left-1/4 w-2 h-2 bg-white rounded-full shadow-[0_0_12px_#fef08a] firefly-particle" style="animation-delay: 0s;"></div>
+            <div class="absolute top-1/3 right-1/4 w-2.5 h-2.5 bg-white rounded-full shadow-[0_0_12px_#fef08a] firefly-particle" style="animation-delay: 1.5s;"></div>
+            <div class="absolute bottom-1/3 left-1/3 w-2 h-2 bg-white rounded-full shadow-[0_0_12px_#fef08a] firefly-particle" style="animation-delay: 2.8s;"></div>
+
+            <!-- Center Dialog Card -->
+            <div class="entrance relative z-10 bg-white/85 backdrop-blur-md p-8 md:p-12 rounded-[32px] shadow-[0_20px_60px_rgba(202,138,4,0.25)] flex flex-col items-center text-center max-w-lg border border-white/60">
+                <div class="swaying-flower w-16 h-16 md:w-20 md:h-20 mb-4"><svg viewBox="0 0 40 40" class="w-full h-full"><g><ellipse cx="20" cy="10" rx="7.5" ry="11" fill="#fb923c" transform="rotate(0 20 20)"/><ellipse cx="20" cy="10" rx="7.5" ry="11" fill="#fb923c" transform="rotate(72 20 20)"/><ellipse cx="20" cy="10" rx="7.5" ry="11" fill="#fb923c" transform="rotate(144 20 20)"/><ellipse cx="20" cy="10" rx="7.5" ry="11" fill="#fb923c" transform="rotate(216 20 20)"/><ellipse cx="20" cy="10" rx="7.5" ry="11" fill="#fb923c" transform="rotate(288 20 20)"/><circle cx="20" cy="20" r="6.5" fill="#78350f"/></g></svg></div>
+                <h2 class="serif-font text-2xl md:text-3xl italic text-amber-900 font-semibold mb-8 leading-snug">
+                    Antes de empezar, tengo algo que decirte...
+                </h2>
+                <button id="start-btn" class="cursor-pointer bg-gradient-to-r from-purple-900 to-indigo-950 text-white font-semibold py-4 px-10 rounded-full shadow-lg hover:scale-105 active:scale-95 transition-all duration-300 text-lg">
+                    Presiona ahora
+                </button>
+            </div>
+
+            <!-- Bottom Yellow Garden (custom animated SVG flowers with stems, growing over animated grass) -->
+            <div class="absolute bottom-0 left-0 w-full h-40 md:h-44 pointer-events-none overflow-hidden">
+                <!-- Grass ground glow -->
+                <div class="absolute bottom-0 left-0 w-full h-24 bg-gradient-to-t from-green-700/40 via-green-500/10 to-transparent"></div>
+                <!-- Animated grass blades (SVG, scales identically on any device) -->
+                <div class="grass-ground h-16 md:h-20" id="grass-inicio"></div>
+            </div>
+            <div class="absolute bottom-0 left-0 w-full h-36 flex justify-around items-end pointer-events-none overflow-hidden px-4">
+                <div class="swaying-flower w-10 h-24 md:w-12 md:h-28 mb-[-10px]"><svg viewBox="0 0 40 100" class="w-full h-full"><path d="M20 98 L20 40" stroke="#4ade80" stroke-width="4" stroke-linecap="round" fill="none"/><path d="M20 72 C 8 68, 3 57, 12 50 C 17 58, 20 65, 20 72 Z" fill="#22c55e"/><g><ellipse cx="20" cy="16" rx="8" ry="13" fill="#fbbf24" transform="rotate(0 20 29)"/><ellipse cx="20" cy="16" rx="8" ry="13" fill="#fbbf24" transform="rotate(72 20 29)"/><ellipse cx="20" cy="16" rx="8" ry="13" fill="#fbbf24" transform="rotate(144 20 29)"/><ellipse cx="20" cy="16" rx="8" ry="13" fill="#fbbf24" transform="rotate(216 20 29)"/><ellipse cx="20" cy="16" rx="8" ry="13" fill="#fbbf24" transform="rotate(288 20 29)"/><circle cx="20" cy="29" r="7" fill="#78350f"/></g></svg></div>
+                <div class="swaying-flower w-12 h-28 md:w-14 md:h-32 mb-[-15px]" style="animation-delay: 0.5s;"><svg viewBox="0 0 40 100" class="w-full h-full"><path d="M20 98 L20 36" stroke="#4ade80" stroke-width="4" stroke-linecap="round" fill="none"/><path d="M20 68 C 32 64, 37 53, 28 46 C 23 54, 20 61, 20 68 Z" fill="#22c55e"/><g><ellipse cx="20" cy="14" rx="9" ry="14" fill="#fffdf5" transform="rotate(0 20 28)"/><ellipse cx="20" cy="14" rx="9" ry="14" fill="#fffdf5" transform="rotate(72 20 28)"/><ellipse cx="20" cy="14" rx="9" ry="14" fill="#fffdf5" transform="rotate(144 20 28)"/><ellipse cx="20" cy="14" rx="9" ry="14" fill="#fffdf5" transform="rotate(216 20 28)"/><ellipse cx="20" cy="14" rx="9" ry="14" fill="#fffdf5" transform="rotate(288 20 28)"/><circle cx="20" cy="28" r="8" fill="#f59e0b"/></g></svg></div>
+                <div class="swaying-flower w-8 h-20 md:w-9 md:h-22" style="animation-delay: 1.2s;"><svg viewBox="0 0 40 100" class="w-full h-full"><path d="M20 98 L20 44" stroke="#4ade80" stroke-width="3" stroke-linecap="round" fill="none"/><g><ellipse cx="20" cy="20" rx="7" ry="11" fill="#fbbf24" transform="rotate(0 20 32)"/><ellipse cx="20" cy="20" rx="7" ry="11" fill="#fbbf24" transform="rotate(72 20 32)"/><ellipse cx="20" cy="20" rx="7" ry="11" fill="#fbbf24" transform="rotate(144 20 32)"/><ellipse cx="20" cy="20" rx="7" ry="11" fill="#fbbf24" transform="rotate(216 20 32)"/><ellipse cx="20" cy="20" rx="7" ry="11" fill="#fbbf24" transform="rotate(288 20 32)"/><circle cx="20" cy="32" r="6" fill="#78350f"/></g></svg></div>
+                <div class="swaying-flower w-14 h-32 md:w-16 md:h-36 mb-[-20px]" style="animation-delay: 0.8s;"><svg viewBox="0 0 40 100" class="w-full h-full"><path d="M20 98 L20 32" stroke="#4ade80" stroke-width="4" stroke-linecap="round" fill="none"/><path d="M20 64 C 8 60, 3 49, 12 42 C 17 50, 20 57, 20 64 Z" fill="#22c55e"/><g><ellipse cx="20" cy="10" rx="10" ry="15" fill="#fffdf5" transform="rotate(0 20 24)"/><ellipse cx="20" cy="10" rx="10" ry="15" fill="#fffdf5" transform="rotate(72 20 24)"/><ellipse cx="20" cy="10" rx="10" ry="15" fill="#fffdf5" transform="rotate(144 20 24)"/><ellipse cx="20" cy="10" rx="10" ry="15" fill="#fffdf5" transform="rotate(216 20 24)"/><ellipse cx="20" cy="10" rx="10" ry="15" fill="#fffdf5" transform="rotate(288 20 24)"/><circle cx="20" cy="24" r="9" fill="#f59e0b"/></g></svg></div>
+                <div class="swaying-flower w-10 h-24 md:w-12 md:h-28" style="animation-delay: 1.8s;"><svg viewBox="0 0 40 100" class="w-full h-full"><path d="M20 98 L20 40" stroke="#4ade80" stroke-width="4" stroke-linecap="round" fill="none"/><path d="M20 72 C 32 68, 37 57, 28 50 C 23 58, 20 65, 20 72 Z" fill="#22c55e"/><g><ellipse cx="20" cy="16" rx="8" ry="13" fill="#fbbf24" transform="rotate(0 20 29)"/><ellipse cx="20" cy="16" rx="8" ry="13" fill="#fbbf24" transform="rotate(72 20 29)"/><ellipse cx="20" cy="16" rx="8" ry="13" fill="#fbbf24" transform="rotate(144 20 29)"/><ellipse cx="20" cy="16" rx="8" ry="13" fill="#fbbf24" transform="rotate(216 20 29)"/><ellipse cx="20" cy="16" rx="8" ry="13" fill="#fbbf24" transform="rotate(288 20 29)"/><circle cx="20" cy="29" r="7" fill="#78350f"/></g></svg></div>
+                <div class="swaying-flower w-12 h-28 md:w-14 md:h-32 mb-[-10px]" style="animation-delay: 0.3s;"><svg viewBox="0 0 40 100" class="w-full h-full"><path d="M20 98 L20 36" stroke="#4ade80" stroke-width="4" stroke-linecap="round" fill="none"/><path d="M20 68 C 8 64, 3 53, 12 46 C 17 54, 20 61, 20 68 Z" fill="#22c55e"/><g><ellipse cx="20" cy="14" rx="9" ry="14" fill="#fffdf5" transform="rotate(0 20 28)"/><ellipse cx="20" cy="14" rx="9" ry="14" fill="#fffdf5" transform="rotate(72 20 28)"/><ellipse cx="20" cy="14" rx="9" ry="14" fill="#fffdf5" transform="rotate(144 20 28)"/><ellipse cx="20" cy="14" rx="9" ry="14" fill="#fffdf5" transform="rotate(216 20 28)"/><ellipse cx="20" cy="14" rx="9" ry="14" fill="#fffdf5" transform="rotate(288 20 28)"/><circle cx="20" cy="28" r="8" fill="#f59e0b"/></g></svg></div>
+                <div class="swaying-flower w-8 h-20 md:w-9 md:h-22" style="animation-delay: 1.5s;"><svg viewBox="0 0 40 100" class="w-full h-full"><path d="M20 98 L20 44" stroke="#4ade80" stroke-width="3" stroke-linecap="round" fill="none"/><g><ellipse cx="20" cy="20" rx="7" ry="11" fill="#fbbf24" transform="rotate(0 20 32)"/><ellipse cx="20" cy="20" rx="7" ry="11" fill="#fbbf24" transform="rotate(72 20 32)"/><ellipse cx="20" cy="20" rx="7" ry="11" fill="#fbbf24" transform="rotate(144 20 32)"/><ellipse cx="20" cy="20" rx="7" ry="11" fill="#fbbf24" transform="rotate(216 20 32)"/><ellipse cx="20" cy="20" rx="7" ry="11" fill="#fbbf24" transform="rotate(288 20 32)"/><circle cx="20" cy="32" r="6" fill="#78350f"/></g></svg></div>
+            </div>
+        </div>
+
+
+        <!-- ================= SLIDE 2: TRANSICIÓN OSCURA ================= -->
+        <div id="slide-transicion" class="slide bg-[#09050d] p-8 md:p-16 text-center">
+            <!-- Subtle purple sparkles -->
+            <div class="absolute top-1/4 left-[20%] w-1.5 h-1.5 bg-purple-300 rounded-full shadow-[0_0_10px_#c084fc] firefly-particle" style="animation-delay: 0.4s;"></div>
+            <div class="absolute top-1/3 right-[22%] w-2 h-2 bg-purple-300 rounded-full shadow-[0_0_12px_#c084fc] firefly-particle" style="animation-delay: 1.6s;"></div>
+            <div class="absolute bottom-1/4 left-[30%] w-1.5 h-1.5 bg-purple-300 rounded-full shadow-[0_0_10px_#c084fc] firefly-particle" style="animation-delay: 2.5s;"></div>
+
+            <div class="entrance max-w-2xl flex flex-col items-center gap-6 z-10">
+                <h2 class="serif-font text-3xl md:text-4xl italic text-stone-200 font-normal leading-relaxed">
+                    ¿Flores amarillas? Mmm... no, esas no son para ti.
+                </h2>
+                <p class="serif-font text-2xl md:text-3xl italic text-purple-400 font-semibold flex items-center gap-3">
+                    A ti te voy a dar flores moradas <span class="text-4xl">💜</span>
+                </p>
+                <div class="text-5xl my-4 p-4 rounded-full bg-purple-900/20" style="animation: pulse-glow 2s infinite;">
+                    🌌
+                </div>
+                <button class="continue-btn cursor-pointer bg-transparent text-amber-300 border-2 border-amber-300 py-3.5 px-10 rounded-full font-semibold text-lg hover:bg-amber-300 hover:text-stone-950 transition-all duration-300 mt-4">
+                    Continuar
+                </button>
+            </div>
+        </div>
+
+
+        <!-- ================= SLIDE 3: MENÚ PRINCIPAL (Universo 3D + Jardín Morado) ================= -->
+        <div id="slide-menu" class="slide p-6 md:p-10 justify-between relative">
+            <!-- Three.js Canvas Container for 3D Universe -->
+            <div id="universe-container" class="absolute inset-0 z-0 pointer-events-none"></div>
+
+            <!-- Floating Purple Fireflies (Jardín) -->
+            <div class="absolute top-[52%] left-[10%] w-1.5 h-1.5 bg-purple-200 rounded-full shadow-[0_0_10px_#c084fc] firefly-particle pointer-events-none z-[1]" style="animation-delay: 2.4s;"></div>
+            <div class="absolute top-[62%] right-[18%] w-2 h-2 bg-purple-100 rounded-full shadow-[0_0_12px_#e9d5ff] firefly-particle pointer-events-none z-[1]" style="animation-delay: 3.1s;"></div>
+            <div class="absolute bottom-[28%] left-[36%] w-2 h-2 bg-purple-100 rounded-full shadow-[0_0_12px_#d8b4fe] firefly-particle pointer-events-none z-[1]" style="animation-delay: 1.9s;"></div>
+            <div class="absolute bottom-[35%] right-[42%] w-1.5 h-1.5 bg-purple-200 rounded-full shadow-[0_0_10px_#e9d5ff] firefly-particle pointer-events-none z-[1]" style="animation-delay: 2.7s;"></div>
+            <div class="absolute bottom-[18%] left-[20%] w-1.5 h-1.5 bg-purple-200 rounded-full shadow-[0_0_10px_#c084fc] firefly-particle pointer-events-none z-[1]" style="animation-delay: 0.6s;"></div>
+            <div class="absolute bottom-[20%] right-[24%] w-2 h-2 bg-purple-100 rounded-full shadow-[0_0_12px_#d8b4fe] firefly-particle pointer-events-none z-[1]" style="animation-delay: 1.3s;"></div>
+
+            <!-- Top Header & Music Player -->
+            <div class="entrance relative z-10 flex flex-col items-center gap-3 w-full max-w-4xl mx-auto">
+                <h1 class="serif-font text-3xl md:text-4xl lg:text-5xl font-bold text-center tracking-tight shimmer-title">
+                    Para ti, que eres tan especial <span class="text-purple-400">💜</span>
+                </h1>
+
+                <!-- Music Player Widget connected to assets/musica/ -->
+                <div class="bg-white/10 backdrop-blur-md border border-white/20 py-2.5 px-6 rounded-full flex items-center gap-4 shadow-xl">
+                    <div class="text-purple-400 text-lg"><i class="fa-solid fa-music"></i></div>
+                    <div id="menu-track-info" class="text-stone-200 text-xs md:text-sm italic">assets/musica/menu.mp3</div>
+                    <button id="menu-audio-btn" class="cursor-pointer bg-purple-600 hover:bg-purple-500 text-white w-8 h-8 rounded-full flex items-center justify-center shadow transition-all">
+                        <i class="fa-solid fa-play text-xs"></i>
+                    </button>
+                    <button id="menu-stop-btn" class="cursor-pointer bg-white/10 hover:bg-white/20 text-stone-200 w-8 h-8 rounded-full flex items-center justify-center transition-all" title="Detener">
+                        <i class="fa-solid fa-stop text-xs"></i>
+                    </button>
+                </div>
+            </div>
+
+            <!-- Center Layout: Side Photos & Menu Buttons -->
+            <div class="relative z-10 flex flex-col md:flex-row justify-between items-center w-full max-w-5xl mx-auto my-auto gap-6 px-4">
+                <!-- Left Photo Slot ("tu foto" from assets/imagenes/) -->
+                <div class="w-40 h-40 md:w-48 md:h-48 bg-gradient-to-br from-purple-900/40 to-indigo-950/60 border-2 border-dashed border-purple-400/50 rounded-3xl flex flex-col items-center justify-center text-stone-200 italic shadow-2xl backdrop-blur-sm overflow-hidden group hover:border-purple-300 transition-all duration-300">
+                    <img src="assets/imagenes/tu_foto.jpg" alt="Tu foto" class="w-full h-full object-cover rounded-3xl absolute inset-0 opacity-80" onerror="this.style.display='none'">
+                    <div class="relative z-10 flex flex-col items-center">
+                        <i class="fa-regular fa-image text-2xl text-purple-300 mb-1"></i>
+                        <span class="text-sm font-medium">tu foto</span>
+                        <span class="text-[10px] opacity-50 mt-1">assets/imagenes/</span>
+                    </div>
+                </div>
+
+                <!-- Center Navigation Buttons, with fireflies drifting around them -->
+                <div class="relative flex flex-col gap-4 w-72 md:w-80">
+                    <!-- Fireflies clustered around the three options -->
+                    <div class="absolute -top-6 -left-8 w-2 h-2 bg-amber-100 rounded-full shadow-[0_0_14px_#fde68a] firefly-particle pointer-events-none" style="animation-delay: 0.3s;"></div>
+                    <div class="absolute top-1/4 -right-10 w-1.5 h-1.5 bg-purple-100 rounded-full shadow-[0_0_12px_#e9d5ff] firefly-particle pointer-events-none" style="animation-delay: 1.4s;"></div>
+                    <div class="absolute top-1/2 -left-10 w-2 h-2 bg-amber-100 rounded-full shadow-[0_0_14px_#fde68a] firefly-particle pointer-events-none" style="animation-delay: 2.2s;"></div>
+                    <div class="absolute bottom-1/4 -right-8 w-1.5 h-1.5 bg-purple-100 rounded-full shadow-[0_0_12px_#e9d5ff] firefly-particle pointer-events-none" style="animation-delay: 0.9s;"></div>
+                    <div class="absolute -bottom-6 left-1/3 w-2 h-2 bg-amber-100 rounded-full shadow-[0_0_14px_#fde68a] firefly-particle pointer-events-none" style="animation-delay: 1.8s;"></div>
+                    <div class="absolute -top-4 right-1/4 w-1.5 h-1.5 bg-purple-100 rounded-full shadow-[0_0_12px_#e9d5ff] firefly-particle pointer-events-none" style="animation-delay: 2.7s;"></div>
+
+                    <button data-target="slide-integrantes" class="nav-btn cursor-pointer bg-white/10 hover:bg-white/20 backdrop-blur-md border border-white/20 hover:border-purple-300/60 text-white py-4 px-6 rounded-full font-semibold text-base flex items-center justify-center gap-3 shadow-xl transition-all duration-300 hover:scale-105 hover:shadow-purple-400/30">
+                        <i class="fa-solid fa-clapperboard text-purple-400"></i> Integrantes
+                    </button>
+                    <button data-target="slide-exitos" class="nav-btn cursor-pointer bg-white/10 hover:bg-white/20 backdrop-blur-md border border-white/20 hover:border-purple-300/60 text-white py-4 px-6 rounded-full font-semibold text-base flex items-center justify-center gap-3 shadow-xl transition-all duration-300 hover:scale-105 hover:shadow-purple-400/30">
+                        <i class="fa-solid fa-music text-purple-400"></i> Éxitos
+                    </button>
+                    <button data-target="slide-nosotros" class="nav-btn cursor-pointer bg-white/10 hover:bg-white/20 backdrop-blur-md border border-white/20 hover:border-purple-300/60 text-white py-4 px-6 rounded-full font-semibold text-base flex items-center justify-center gap-3 shadow-xl transition-all duration-300 hover:scale-105 hover:shadow-purple-400/30">
+                        <i class="fa-solid fa-heart text-rose-500"></i> Nosotros
+                    </button>
+                </div>
+
+                <!-- Right Photo Slot ("su foto" from assets/imagenes/) -->
+                <div class="w-40 h-40 md:w-48 md:h-48 bg-gradient-to-br from-purple-900/40 to-indigo-950/60 border-2 border-dashed border-purple-400/50 rounded-3xl flex flex-col items-center justify-center text-stone-200 italic shadow-2xl backdrop-blur-sm overflow-hidden group hover:border-purple-300 transition-all duration-300">
+                    <img src="assets/imagenes/su_foto.jpg" alt="Su foto" class="w-full h-full object-cover rounded-3xl absolute inset-0 opacity-80" onerror="this.style.display='none'">
+                    <div class="relative z-10 flex flex-col items-center">
+                        <i class="fa-regular fa-image text-2xl text-purple-300 mb-1"></i>
+                        <span class="text-sm font-medium">su foto</span>
+                        <span class="text-[10px] opacity-50 mt-1">assets/imagenes/</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Bottom Purple Flower Garden (custom animated SVG flowers with stems, growing over animated night grass) -->
+            <div class="relative z-10 w-full h-36 md:h-40 pointer-events-none overflow-hidden">
+                <!-- Soft garden ground glow -->
+                <div class="absolute bottom-0 left-0 w-full h-20 bg-gradient-to-t from-purple-950/60 via-purple-800/15 to-transparent"></div>
+                <!-- Animated night grass blades (SVG, scales identically on any device) -->
+                <div class="grass-ground h-14 md:h-16" id="grass-menu"></div>
+
+                <!-- Back row: smaller, hazy, distant flowers for depth -->
+                <div class="absolute bottom-4 left-0 w-full flex justify-around items-end opacity-60 blur-[1px] px-2">
+                    <div class="swaying-flower w-6 h-14 md:w-7 md:h-16" style="animation-delay: 0.4s;"><svg viewBox="0 0 40 100" class="w-full h-full"><path d="M20 98 L20 42" stroke="#4ade80" stroke-width="3" stroke-linecap="round" fill="none"/><g><ellipse cx="20" cy="18" rx="7" ry="12" fill="#a855f7" transform="rotate(0 20 30)"/><ellipse cx="20" cy="18" rx="7" ry="12" fill="#a855f7" transform="rotate(72 20 30)"/><ellipse cx="20" cy="18" rx="7" ry="12" fill="#a855f7" transform="rotate(144 20 30)"/><ellipse cx="20" cy="18" rx="7" ry="12" fill="#a855f7" transform="rotate(216 20 30)"/><ellipse cx="20" cy="18" rx="7" ry="12" fill="#a855f7" transform="rotate(288 20 30)"/><circle cx="20" cy="30" r="7" fill="#fde68a"/></g></svg></div>
+                    <div class="swaying-flower w-7 h-16 md:w-8 md:h-18" style="animation-delay: 1.0s;"><svg viewBox="0 0 40 100" class="w-full h-full"><path d="M20 98 L20 42" stroke="#4ade80" stroke-width="3" stroke-linecap="round" fill="none"/><g><ellipse cx="20" cy="18" rx="7" ry="12" fill="#f0abfc" transform="rotate(0 20 30)"/><ellipse cx="20" cy="18" rx="7" ry="12" fill="#f0abfc" transform="rotate(72 20 30)"/><ellipse cx="20" cy="18" rx="7" ry="12" fill="#f0abfc" transform="rotate(144 20 30)"/><ellipse cx="20" cy="18" rx="7" ry="12" fill="#f0abfc" transform="rotate(216 20 30)"/><ellipse cx="20" cy="18" rx="7" ry="12" fill="#f0abfc" transform="rotate(288 20 30)"/><circle cx="20" cy="30" r="7" fill="#fde68a"/></g></svg></div>
+                    <div class="swaying-flower w-6 h-14 md:w-7 md:h-16" style="animation-delay: 1.7s;"><svg viewBox="0 0 40 100" class="w-full h-full"><path d="M20 98 L20 42" stroke="#4ade80" stroke-width="3" stroke-linecap="round" fill="none"/><g><ellipse cx="20" cy="18" rx="7" ry="12" fill="#e9d5ff" transform="rotate(0 20 30)"/><ellipse cx="20" cy="18" rx="7" ry="12" fill="#e9d5ff" transform="rotate(72 20 30)"/><ellipse cx="20" cy="18" rx="7" ry="12" fill="#e9d5ff" transform="rotate(144 20 30)"/><ellipse cx="20" cy="18" rx="7" ry="12" fill="#e9d5ff" transform="rotate(216 20 30)"/><ellipse cx="20" cy="18" rx="7" ry="12" fill="#e9d5ff" transform="rotate(288 20 30)"/><circle cx="20" cy="30" r="7" fill="#f59e0b"/></g></svg></div>
+                    <div class="swaying-flower w-7 h-16 md:w-8 md:h-18" style="animation-delay: 0.2s;"><svg viewBox="0 0 40 100" class="w-full h-full"><path d="M20 98 L20 42" stroke="#4ade80" stroke-width="3" stroke-linecap="round" fill="none"/><g><ellipse cx="20" cy="18" rx="7" ry="12" fill="#a855f7" transform="rotate(0 20 30)"/><ellipse cx="20" cy="18" rx="7" ry="12" fill="#a855f7" transform="rotate(72 20 30)"/><ellipse cx="20" cy="18" rx="7" ry="12" fill="#a855f7" transform="rotate(144 20 30)"/><ellipse cx="20" cy="18" rx="7" ry="12" fill="#a855f7" transform="rotate(216 20 30)"/><ellipse cx="20" cy="18" rx="7" ry="12" fill="#a855f7" transform="rotate(288 20 30)"/><circle cx="20" cy="30" r="7" fill="#fde68a"/></g></svg></div>
+                    <div class="swaying-flower w-6 h-14 md:w-7 md:h-16" style="animation-delay: 1.4s;"><svg viewBox="0 0 40 100" class="w-full h-full"><path d="M20 98 L20 42" stroke="#4ade80" stroke-width="3" stroke-linecap="round" fill="none"/><g><ellipse cx="20" cy="18" rx="7" ry="12" fill="#f0abfc" transform="rotate(0 20 30)"/><ellipse cx="20" cy="18" rx="7" ry="12" fill="#f0abfc" transform="rotate(72 20 30)"/><ellipse cx="20" cy="18" rx="7" ry="12" fill="#f0abfc" transform="rotate(144 20 30)"/><ellipse cx="20" cy="18" rx="7" ry="12" fill="#f0abfc" transform="rotate(216 20 30)"/><ellipse cx="20" cy="18" rx="7" ry="12" fill="#f0abfc" transform="rotate(288 20 30)"/><circle cx="20" cy="30" r="7" fill="#fde68a"/></g></svg></div>
+                    <div class="swaying-flower w-7 h-16 md:w-8 md:h-18" style="animation-delay: 0.9s;"><svg viewBox="0 0 40 100" class="w-full h-full"><path d="M20 98 L20 42" stroke="#4ade80" stroke-width="3" stroke-linecap="round" fill="none"/><g><ellipse cx="20" cy="18" rx="7" ry="12" fill="#e9d5ff" transform="rotate(0 20 30)"/><ellipse cx="20" cy="18" rx="7" ry="12" fill="#e9d5ff" transform="rotate(72 20 30)"/><ellipse cx="20" cy="18" rx="7" ry="12" fill="#e9d5ff" transform="rotate(144 20 30)"/><ellipse cx="20" cy="18" rx="7" ry="12" fill="#e9d5ff" transform="rotate(216 20 30)"/><ellipse cx="20" cy="18" rx="7" ry="12" fill="#e9d5ff" transform="rotate(288 20 30)"/><circle cx="20" cy="30" r="7" fill="#f59e0b"/></g></svg></div>
+                    <div class="swaying-flower w-6 h-14 md:w-7 md:h-16" style="animation-delay: 1.6s;"><svg viewBox="0 0 40 100" class="w-full h-full"><path d="M20 98 L20 42" stroke="#4ade80" stroke-width="3" stroke-linecap="round" fill="none"/><g><ellipse cx="20" cy="18" rx="7" ry="12" fill="#a855f7" transform="rotate(0 20 30)"/><ellipse cx="20" cy="18" rx="7" ry="12" fill="#a855f7" transform="rotate(72 20 30)"/><ellipse cx="20" cy="18" rx="7" ry="12" fill="#a855f7" transform="rotate(144 20 30)"/><ellipse cx="20" cy="18" rx="7" ry="12" fill="#a855f7" transform="rotate(216 20 30)"/><ellipse cx="20" cy="18" rx="7" ry="12" fill="#a855f7" transform="rotate(288 20 30)"/><circle cx="20" cy="30" r="7" fill="#fde68a"/></g></svg></div>
+                    <div class="swaying-flower w-7 h-16 md:w-8 md:h-18" style="animation-delay: 0.5s;"><svg viewBox="0 0 40 100" class="w-full h-full"><path d="M20 98 L20 42" stroke="#4ade80" stroke-width="3" stroke-linecap="round" fill="none"/><g><ellipse cx="20" cy="18" rx="7" ry="12" fill="#f0abfc" transform="rotate(0 20 30)"/><ellipse cx="20" cy="18" rx="7" ry="12" fill="#f0abfc" transform="rotate(72 20 30)"/><ellipse cx="20" cy="18" rx="7" ry="12" fill="#f0abfc" transform="rotate(144 20 30)"/><ellipse cx="20" cy="18" rx="7" ry="12" fill="#f0abfc" transform="rotate(216 20 30)"/><ellipse cx="20" cy="18" rx="7" ry="12" fill="#f0abfc" transform="rotate(288 20 30)"/><circle cx="20" cy="30" r="7" fill="#fde68a"/></g></svg></div>
+                    <div class="swaying-flower w-6 h-14 md:w-7 md:h-16" style="animation-delay: 1.2s;"><svg viewBox="0 0 40 100" class="w-full h-full"><path d="M20 98 L20 42" stroke="#4ade80" stroke-width="3" stroke-linecap="round" fill="none"/><g><ellipse cx="20" cy="18" rx="7" ry="12" fill="#e9d5ff" transform="rotate(0 20 30)"/><ellipse cx="20" cy="18" rx="7" ry="12" fill="#e9d5ff" transform="rotate(72 20 30)"/><ellipse cx="20" cy="18" rx="7" ry="12" fill="#e9d5ff" transform="rotate(144 20 30)"/><ellipse cx="20" cy="18" rx="7" ry="12" fill="#e9d5ff" transform="rotate(216 20 30)"/><ellipse cx="20" cy="18" rx="7" ry="12" fill="#e9d5ff" transform="rotate(288 20 30)"/><circle cx="20" cy="30" r="7" fill="#f59e0b"/></g></svg></div>
+                </div>
+
+                <!-- Front row: main garden, lush and varied, each flower with its own stem, leaf and petals -->
+                <div class="absolute bottom-0 left-0 w-full flex justify-around items-end px-2">
+                    <div class="swaying-flower w-10 h-24 md:w-12 md:h-28"><svg viewBox="0 0 40 100" class="w-full h-full"><path d="M20 98 L20 40" stroke="#4ade80" stroke-width="4" stroke-linecap="round" fill="none"/><path d="M20 72 C 8 68, 3 57, 12 50 C 17 58, 20 65, 20 72 Z" fill="#22c55e"/><g><ellipse cx="20" cy="16" rx="8" ry="13" fill="#a855f7" transform="rotate(0 20 29)"/><ellipse cx="20" cy="16" rx="8" ry="13" fill="#a855f7" transform="rotate(72 20 29)"/><ellipse cx="20" cy="16" rx="8" ry="13" fill="#a855f7" transform="rotate(144 20 29)"/><ellipse cx="20" cy="16" rx="8" ry="13" fill="#a855f7" transform="rotate(216 20 29)"/><ellipse cx="20" cy="16" rx="8" ry="13" fill="#a855f7" transform="rotate(288 20 29)"/><circle cx="20" cy="29" r="7" fill="#fde68a"/></g></svg></div>
+                    <div class="swaying-flower w-12 h-28 md:w-14 md:h-32" style="animation-delay: 0.6s;"><svg viewBox="0 0 40 100" class="w-full h-full"><path d="M20 98 L20 36" stroke="#4ade80" stroke-width="4" stroke-linecap="round" fill="none"/><path d="M20 68 C 32 64, 37 53, 28 46 C 23 54, 20 61, 20 68 Z" fill="#22c55e"/><g><ellipse cx="20" cy="14" rx="9" ry="14" fill="#f0abfc" transform="rotate(0 20 28)"/><ellipse cx="20" cy="14" rx="9" ry="14" fill="#f0abfc" transform="rotate(72 20 28)"/><ellipse cx="20" cy="14" rx="9" ry="14" fill="#f0abfc" transform="rotate(144 20 28)"/><ellipse cx="20" cy="14" rx="9" ry="14" fill="#f0abfc" transform="rotate(216 20 28)"/><ellipse cx="20" cy="14" rx="9" ry="14" fill="#f0abfc" transform="rotate(288 20 28)"/><circle cx="20" cy="28" r="8" fill="#fde68a"/></g></svg></div>
+                    <div class="swaying-flower w-8 h-20 md:w-9 md:h-22" style="animation-delay: 1.3s;"><svg viewBox="0 0 40 100" class="w-full h-full"><path d="M20 98 L20 44" stroke="#4ade80" stroke-width="3" stroke-linecap="round" fill="none"/><g><ellipse cx="20" cy="20" rx="7" ry="11" fill="#e9d5ff" transform="rotate(0 20 32)"/><ellipse cx="20" cy="20" rx="7" ry="11" fill="#e9d5ff" transform="rotate(72 20 32)"/><ellipse cx="20" cy="20" rx="7" ry="11" fill="#e9d5ff" transform="rotate(144 20 32)"/><ellipse cx="20" cy="20" rx="7" ry="11" fill="#e9d5ff" transform="rotate(216 20 32)"/><ellipse cx="20" cy="20" rx="7" ry="11" fill="#e9d5ff" transform="rotate(288 20 32)"/><circle cx="20" cy="32" r="6" fill="#f59e0b"/></g></svg></div>
+                    <div class="swaying-flower w-14 h-32 md:w-16 md:h-36" style="animation-delay: 0.2s;"><svg viewBox="0 0 40 100" class="w-full h-full"><path d="M20 98 L20 32" stroke="#4ade80" stroke-width="4" stroke-linecap="round" fill="none"/><path d="M20 64 C 8 60, 3 49, 12 42 C 17 50, 20 57, 20 64 Z" fill="#22c55e"/><g><ellipse cx="20" cy="10" rx="10" ry="15" fill="#f0abfc" transform="rotate(0 20 24)"/><ellipse cx="20" cy="10" rx="10" ry="15" fill="#f0abfc" transform="rotate(72 20 24)"/><ellipse cx="20" cy="10" rx="10" ry="15" fill="#f0abfc" transform="rotate(144 20 24)"/><ellipse cx="20" cy="10" rx="10" ry="15" fill="#f0abfc" transform="rotate(216 20 24)"/><ellipse cx="20" cy="10" rx="10" ry="15" fill="#f0abfc" transform="rotate(288 20 24)"/><circle cx="20" cy="24" r="9" fill="#fde68a"/></g></svg></div>
+                    <div class="swaying-flower w-10 h-24 md:w-12 md:h-28" style="animation-delay: 1.1s;"><svg viewBox="0 0 40 100" class="w-full h-full"><path d="M20 98 L20 40" stroke="#4ade80" stroke-width="4" stroke-linecap="round" fill="none"/><path d="M20 72 C 32 68, 37 57, 28 50 C 23 58, 20 65, 20 72 Z" fill="#22c55e"/><g><ellipse cx="20" cy="16" rx="8" ry="13" fill="#a855f7" transform="rotate(0 20 29)"/><ellipse cx="20" cy="16" rx="8" ry="13" fill="#a855f7" transform="rotate(72 20 29)"/><ellipse cx="20" cy="16" rx="8" ry="13" fill="#a855f7" transform="rotate(144 20 29)"/><ellipse cx="20" cy="16" rx="8" ry="13" fill="#a855f7" transform="rotate(216 20 29)"/><ellipse cx="20" cy="16" rx="8" ry="13" fill="#a855f7" transform="rotate(288 20 29)"/><circle cx="20" cy="29" r="7" fill="#fde68a"/></g></svg></div>
+                    <div class="swaying-flower w-12 h-28 md:w-14 md:h-32" style="animation-delay: 0.7s;"><svg viewBox="0 0 40 100" class="w-full h-full"><path d="M20 98 L20 36" stroke="#4ade80" stroke-width="4" stroke-linecap="round" fill="none"/><path d="M20 68 C 8 64, 3 53, 12 46 C 17 54, 20 61, 20 68 Z" fill="#22c55e"/><g><ellipse cx="20" cy="14" rx="9" ry="14" fill="#e9d5ff" transform="rotate(0 20 28)"/><ellipse cx="20" cy="14" rx="9" ry="14" fill="#e9d5ff" transform="rotate(72 20 28)"/><ellipse cx="20" cy="14" rx="9" ry="14" fill="#e9d5ff" transform="rotate(144 20 28)"/><ellipse cx="20" cy="14" rx="9" ry="14" fill="#e9d5ff" transform="rotate(216 20 28)"/><ellipse cx="20" cy="14" rx="9" ry="14" fill="#e9d5ff" transform="rotate(288 20 28)"/><circle cx="20" cy="28" r="8" fill="#f59e0b"/></g></svg></div>
+                    <div class="swaying-flower w-8 h-20 md:w-9 md:h-22" style="animation-delay: 1.8s;"><svg viewBox="0 0 40 100" class="w-full h-full"><path d="M20 98 L20 44" stroke="#4ade80" stroke-width="3" stroke-linecap="round" fill="none"/><g><ellipse cx="20" cy="20" rx="7" ry="11" fill="#a855f7" transform="rotate(0 20 32)"/><ellipse cx="20" cy="20" rx="7" ry="11" fill="#a855f7" transform="rotate(72 20 32)"/><ellipse cx="20" cy="20" rx="7" ry="11" fill="#a855f7" transform="rotate(144 20 32)"/><ellipse cx="20" cy="20" rx="7" ry="11" fill="#a855f7" transform="rotate(216 20 32)"/><ellipse cx="20" cy="20" rx="7" ry="11" fill="#a855f7" transform="rotate(288 20 32)"/><circle cx="20" cy="32" r="6" fill="#fde68a"/></g></svg></div>
+                    <div class="swaying-flower w-14 h-32 md:w-16 md:h-36" style="animation-delay: 0.4s;"><svg viewBox="0 0 40 100" class="w-full h-full"><path d="M20 98 L20 32" stroke="#4ade80" stroke-width="4" stroke-linecap="round" fill="none"/><path d="M20 64 C 32 60, 37 49, 28 42 C 23 50, 20 57, 20 64 Z" fill="#22c55e"/><g><ellipse cx="20" cy="10" rx="10" ry="15" fill="#f0abfc" transform="rotate(0 20 24)"/><ellipse cx="20" cy="10" rx="10" ry="15" fill="#f0abfc" transform="rotate(72 20 24)"/><ellipse cx="20" cy="10" rx="10" ry="15" fill="#f0abfc" transform="rotate(144 20 24)"/><ellipse cx="20" cy="10" rx="10" ry="15" fill="#f0abfc" transform="rotate(216 20 24)"/><ellipse cx="20" cy="10" rx="10" ry="15" fill="#f0abfc" transform="rotate(288 20 24)"/><circle cx="20" cy="24" r="9" fill="#fde68a"/></g></svg></div>
+                    <div class="swaying-flower w-10 h-24 md:w-12 md:h-28" style="animation-delay: 1.5s;"><svg viewBox="0 0 40 100" class="w-full h-full"><path d="M20 98 L20 40" stroke="#4ade80" stroke-width="4" stroke-linecap="round" fill="none"/><path d="M20 72 C 8 68, 3 57, 12 50 C 17 58, 20 65, 20 72 Z" fill="#22c55e"/><g><ellipse cx="20" cy="16" rx="8" ry="13" fill="#e9d5ff" transform="rotate(0 20 29)"/><ellipse cx="20" cy="16" rx="8" ry="13" fill="#e9d5ff" transform="rotate(72 20 29)"/><ellipse cx="20" cy="16" rx="8" ry="13" fill="#e9d5ff" transform="rotate(144 20 29)"/><ellipse cx="20" cy="16" rx="8" ry="13" fill="#e9d5ff" transform="rotate(216 20 29)"/><ellipse cx="20" cy="16" rx="8" ry="13" fill="#e9d5ff" transform="rotate(288 20 29)"/><circle cx="20" cy="29" r="7" fill="#f59e0b"/></g></svg></div>
+                    <div class="swaying-flower w-12 h-28 md:w-14 md:h-32" style="animation-delay: 1.0s;"><svg viewBox="0 0 40 100" class="w-full h-full"><path d="M20 98 L20 36" stroke="#4ade80" stroke-width="4" stroke-linecap="round" fill="none"/><path d="M20 68 C 32 64, 37 53, 28 46 C 23 54, 20 61, 20 68 Z" fill="#22c55e"/><g><ellipse cx="20" cy="14" rx="9" ry="14" fill="#a855f7" transform="rotate(0 20 28)"/><ellipse cx="20" cy="14" rx="9" ry="14" fill="#a855f7" transform="rotate(72 20 28)"/><ellipse cx="20" cy="14" rx="9" ry="14" fill="#a855f7" transform="rotate(144 20 28)"/><ellipse cx="20" cy="14" rx="9" ry="14" fill="#a855f7" transform="rotate(216 20 28)"/><ellipse cx="20" cy="14" rx="9" ry="14" fill="#a855f7" transform="rotate(288 20 28)"/><circle cx="20" cy="28" r="8" fill="#fde68a"/></g></svg></div>
+                </div>
+            </div>
+        </div>
+
+
+        <!-- ================= SLIDE 4: INTEGRANTES ================= -->
+        <div id="slide-integrantes" class="slide bg-gradient-to-br from-[#17102a] to-[#09050d] p-6 md:p-12">
+            <div class="entrance bg-[#17102a]/90 backdrop-blur-xl border border-purple-400/20 rounded-[32px] w-full max-w-6xl p-6 md:p-10 shadow-2xl flex flex-col gap-6">
+
+                <!-- Back Button -->
+                <div>
+                    <button data-target="slide-menu" class="nav-btn cursor-pointer bg-white/10 hover:bg-white/20 text-stone-200 border border-white/20 py-2 px-5 rounded-full text-sm font-medium flex items-center gap-2 transition-all">
+                        <i class="fa-solid fa-arrow-left"></i> Volver
+                    </button>
+                </div>
+
+                <h2 class="serif-font text-3xl md:text-4xl text-white text-center font-bold">
+                    Integrantes
+                </h2>
+
+                <!-- 7 Members Cards Row (Images from assets/imagenes/integrantes/) -->
+                <div class="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-7 gap-3 w-full">
+                    <!-- RM -->
+                    <div class="flex flex-col items-center gap-2">
+                        <div class="w-full h-28 md:h-32 bg-gradient-to-br from-purple-700 to-purple-900 rounded-2xl flex flex-col items-center justify-center text-stone-200 italic text-xs shadow-lg overflow-hidden relative hover:scale-105 hover:shadow-purple-500/30 transition-all duration-300">
+                            <img src="assets/imagenes/integrantes/rm.jpg" alt="RM" class="w-full h-full object-cover absolute inset-0" onerror="this.style.display='none'">
+                            <span class="relative z-10 opacity-70">foto</span>
+                        </div>
+                        <span class="serif-font text-amber-300 font-semibold italic text-sm">RM</span>
+                    </div>
+                    <!-- Jin -->
+                    <div class="flex flex-col items-center gap-2">
+                        <div class="w-full h-28 md:h-32 bg-gradient-to-br from-purple-700 to-purple-900 rounded-2xl flex flex-col items-center justify-center text-stone-200 italic text-xs shadow-lg overflow-hidden relative hover:scale-105 hover:shadow-purple-500/30 transition-all duration-300">
+                            <img src="assets/imagenes/integrantes/jin.jpg" alt="Jin" class="w-full h-full object-cover absolute inset-0" onerror="this.style.display='none'">
+                            <span class="relative z-10 opacity-70">foto</span>
+                        </div>
+                        <span class="serif-font text-amber-300 font-semibold italic text-sm">Jin</span>
+                    </div>
+                    <!-- SUGA -->
+                    <div class="flex flex-col items-center gap-2">
+                        <div class="w-full h-28 md:h-32 bg-gradient-to-br from-purple-700 to-purple-900 rounded-2xl flex flex-col items-center justify-center text-stone-200 italic text-xs shadow-lg overflow-hidden relative hover:scale-105 hover:shadow-purple-500/30 transition-all duration-300">
+                            <img src="assets/imagenes/integrantes/suga.jpg" alt="SUGA" class="w-full h-full object-cover absolute inset-0" onerror="this.style.display='none'">
+                            <span class="relative z-10 opacity-70">foto</span>
+                        </div>
+                        <span class="serif-font text-amber-300 font-semibold italic text-sm">SUGA</span>
+                    </div>
+                    <!-- J-Hope -->
+                    <div class="flex flex-col items-center gap-2">
+                        <div class="w-full h-28 md:h-32 bg-gradient-to-br from-purple-700 to-purple-900 rounded-2xl flex flex-col items-center justify-center text-stone-200 italic text-xs shadow-lg overflow-hidden relative hover:scale-105 hover:shadow-purple-500/30 transition-all duration-300">
+                            <img src="assets/imagenes/integrantes/jhope.jpg" alt="J-Hope" class="w-full h-full object-cover absolute inset-0" onerror="this.style.display='none'">
+                            <span class="relative z-10 opacity-70">foto</span>
+                        </div>
+                        <span class="serif-font text-amber-300 font-semibold italic text-sm">J-Hope</span>
+                    </div>
+                    <!-- Jimin -->
+                    <div class="flex flex-col items-center gap-2">
+                        <div class="w-full h-28 md:h-32 bg-gradient-to-br from-purple-700 to-purple-900 rounded-2xl flex flex-col items-center justify-center text-stone-200 italic text-xs shadow-lg overflow-hidden relative hover:scale-105 hover:shadow-purple-500/30 transition-all duration-300">
+                            <img src="assets/imagenes/integrantes/jimin.jpg" alt="Jimin" class="w-full h-full object-cover absolute inset-0" onerror="this.style.display='none'">
+                            <span class="relative z-10 opacity-70">foto</span>
+                        </div>
+                        <span class="serif-font text-amber-300 font-semibold italic text-sm">Jimin</span>
+                    </div>
+                    <!-- V -->
+                    <div class="flex flex-col items-center gap-2">
+                        <div class="w-full h-28 md:h-32 bg-gradient-to-br from-purple-700 to-purple-900 rounded-2xl flex flex-col items-center justify-center text-stone-200 italic text-xs shadow-lg overflow-hidden relative hover:scale-105 hover:shadow-purple-500/30 transition-all duration-300">
+                            <img src="assets/imagenes/integrantes/v.jpg" alt="V" class="w-full h-full object-cover absolute inset-0" onerror="this.style.display='none'">
+                            <span class="relative z-10 opacity-70">foto</span>
+                        </div>
+                        <span class="serif-font text-amber-300 font-semibold italic text-sm">V</span>
+                    </div>
+                    <!-- Jungkook -->
+                    <div class="flex flex-col items-center gap-2">
+                        <div class="w-full h-28 md:h-32 bg-gradient-to-br from-purple-700 to-purple-900 rounded-2xl flex flex-col items-center justify-center text-stone-200 italic text-xs shadow-lg overflow-hidden relative hover:scale-105 hover:shadow-purple-500/30 transition-all duration-300">
+                            <img src="assets/imagenes/integrantes/jungkook.jpg" alt="Jungkook" class="w-full h-full object-cover absolute inset-0" onerror="this.style.display='none'">
+                            <span class="relative z-10 opacity-70">foto</span>
+                        </div>
+                        <span class="serif-font text-amber-300 font-semibold italic text-sm">Jungkook</span>
+                    </div>
+                </div>
+
+                <!-- Brief Story Description Box -->
+                <div class="bg-white/5 border border-white/10 p-5 rounded-2xl text-center text-stone-300 italic text-sm md:text-base leading-relaxed">
+                    [Aquí puedes escribir una breve historia: cómo conociste a BTS, cuál es tu bias, o algún recuerdo especial que quieras compartir con ella.]
+                </div>
+
+            </div>
+        </div>
+
+
+        <!-- ================= SLIDE 5: ÉXITOS ================= -->
+        <div id="slide-exitos" class="slide bg-gradient-to-br from-[#17102a] to-[#09050d] p-6 md:p-12 overflow-y-auto">
+            <div class="entrance bg-[#17102a]/90 backdrop-blur-xl border border-purple-400/20 rounded-[32px] w-full max-w-6xl p-6 md:p-10 shadow-2xl flex flex-col gap-6 my-auto">
+
+                <!-- Top Bar: Back & Group Cover + Rotating Vinyl -->
+                <div class="flex justify-between items-center">
+                    <button data-target="slide-menu" class="nav-btn cursor-pointer bg-white/10 hover:bg-white/20 text-stone-200 border border-white/20 py-2 px-5 rounded-full text-sm font-medium flex items-center gap-2 transition-all">
+                        <i class="fa-solid fa-arrow-left"></i> Volver
+                    </button>
+
+                    <div class="flex items-center gap-4">
+                        <div class="w-28 h-20 bg-purple-800 rounded-xl flex flex-col items-center justify-center text-white italic text-xs border border-white/20 overflow-hidden relative shadow-md">
+                            <img src="assets/imagenes/exitos/grupo.jpg" alt="Grupo" class="w-full h-full object-cover absolute inset-0" onerror="this.style.display='none'">
+                            <span class="relative z-10 opacity-80">foto del grupo</span>
+                        </div>
+                        <!-- Vinyl -->
+                        <div class="w-16 h-16 bg-[#111] rounded-full border-4 border-[#333] flex items-center justify-center shadow-lg spinning-disc">
+                            <div class="w-6 h-6 bg-amber-300 rounded-full border-2 border-stone-900"></div>
+                        </div>
+                    </div>
+                </div>
+
+                <h2 class="serif-font text-3xl md:text-4xl text-white text-center font-bold">
+                    Éxitos
+                </h2>
+
+                <!-- Catalog Grid (8 tracks with local assets/musica/exitos/ and assets/imagenes/exitos/) -->
+                <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4 w-full">
+
+                    <!-- 1. Spring Day -->
+                    <div class="song-card bg-white/5 border border-white/10 rounded-2xl p-3 flex flex-col items-center text-center gap-2 shadow-md transition-all duration-300 hover:border-purple-400/40">
+                        <div class="w-full h-24 bg-gradient-to-br from-purple-600 to-indigo-900 rounded-xl flex items-center justify-center text-white text-xl overflow-hidden relative shadow">
+                            <img src="assets/imagenes/exitos/spring_day.jpg" alt="Spring Day" class="w-full h-full object-cover absolute inset-0" onerror="this.style.display='none'">
+                            <i class="fa-solid fa-compact-disc relative z-10 opacity-80"></i>
+                        </div>
+                        <span class="text-xs font-semibold text-white">Spring Day (봄날)</span>
+                        <span class="text-[10px] text-stone-400">You Never Walk Alone · 2017</span>
+                        <button class="song-btn cursor-pointer bg-purple-600 hover:bg-purple-500 text-white w-7 h-7 rounded-full flex items-center justify-center text-xs shadow transition-all mt-1" data-file="spring_day.mp3" data-name="Spring Day">
+                            <i class="fa-solid fa-play"></i>
+                        </button>
+                    </div>
+
+                    <!-- 2. DNA -->
+                    <div class="song-card bg-white/5 border border-white/10 rounded-2xl p-3 flex flex-col items-center text-center gap-2 shadow-md transition-all duration-300 hover:border-purple-400/40">
+                        <div class="w-full h-24 bg-gradient-to-br from-purple-600 to-indigo-900 rounded-xl flex items-center justify-center text-white text-xl overflow-hidden relative shadow">
+                            <img src="assets/imagenes/exitos/dna.jpg" alt="DNA" class="w-full h-full object-cover absolute inset-0" onerror="this.style.display='none'">
+                            <i class="fa-solid fa-compact-disc relative z-10 opacity-80"></i>
+                        </div>
+                        <span class="text-xs font-semibold text-white">DNA</span>
+                        <span class="text-[10px] text-stone-400">Love Yourself: Her · 2017</span>
+                        <button class="song-btn cursor-pointer bg-purple-600 hover:bg-purple-500 text-white w-7 h-7 rounded-full flex items-center justify-center text-xs shadow transition-all mt-1" data-file="dna.mp3" data-name="DNA">
+                            <i class="fa-solid fa-play"></i>
+                        </button>
+                    </div>
+
+                    <!-- 3. Fake Love -->
+                    <div class="song-card bg-white/5 border border-white/10 rounded-2xl p-3 flex flex-col items-center text-center gap-2 shadow-md transition-all duration-300 hover:border-purple-400/40">
+                        <div class="w-full h-24 bg-gradient-to-br from-purple-600 to-pink-700 rounded-xl flex items-center justify-center text-white text-xl overflow-hidden relative shadow">
+                            <img src="assets/imagenes/exitos/fake_love.jpg" alt="Fake Love" class="w-full h-full object-cover absolute inset-0" onerror="this.style.display='none'">
+                            <i class="fa-solid fa-compact-disc relative z-10 opacity-80"></i>
+                        </div>
+                        <span class="text-xs font-semibold text-white">Fake Love</span>
+                        <span class="text-[10px] text-stone-400">Love Yourself: Tear · 2018</span>
+                        <button class="song-btn cursor-pointer bg-purple-600 hover:bg-purple-500 text-white w-7 h-7 rounded-full flex items-center justify-center text-xs shadow transition-all mt-1" data-file="fake_love.mp3" data-name="Fake Love">
+                            <i class="fa-solid fa-play"></i>
+                        </button>
+                    </div>
+
+                    <!-- 4. Boy With Luv -->
+                    <div class="song-card bg-white/5 border border-white/10 rounded-2xl p-3 flex flex-col items-center text-center gap-2 shadow-md transition-all duration-300 hover:border-purple-400/40">
+                        <div class="w-full h-24 bg-gradient-to-br from-amber-500 to-amber-700 rounded-xl flex items-center justify-center text-white text-xl overflow-hidden relative shadow">
+                            <img src="assets/imagenes/exitos/boy_with_luv.jpg" alt="Boy With Luv" class="w-full h-full object-cover absolute inset-0" onerror="this.style.display='none'">
+                            <i class="fa-solid fa-compact-disc relative z-10 opacity-80"></i>
+                        </div>
+                        <span class="text-xs font-semibold text-white">Boy With Luv</span>
+                        <span class="text-[10px] text-stone-400">Map of the Soul · 2019</span>
+                        <button class="song-btn cursor-pointer bg-purple-600 hover:bg-purple-500 text-white w-7 h-7 rounded-full flex items-center justify-center text-xs shadow transition-all mt-1" data-file="boy_with_luv.mp3" data-name="Boy With Luv">
+                            <i class="fa-solid fa-play"></i>
+                        </button>
+                    </div>
+
+                    <!-- 5. ON -->
+                    <div class="song-card bg-white/5 border border-white/10 rounded-2xl p-3 flex flex-col items-center text-center gap-2 shadow-md transition-all duration-300 hover:border-purple-400/40">
+                        <div class="w-full h-24 bg-gradient-to-br from-sky-600 to-blue-900 rounded-xl flex items-center justify-center text-white text-xl overflow-hidden relative shadow">
+                            <img src="assets/imagenes/exitos/on.jpg" alt="ON" class="w-full h-full object-cover absolute inset-0" onerror="this.style.display='none'">
+                            <i class="fa-solid fa-compact-disc relative z-10 opacity-80"></i>
+                        </div>
+                        <span class="text-xs font-semibold text-white">ON</span>
+                        <span class="text-[10px] text-stone-400">Map of the Soul: 7 · 2020</span>
+                        <button class="song-btn cursor-pointer bg-purple-600 hover:bg-purple-500 text-white w-7 h-7 rounded-full flex items-center justify-center text-xs shadow transition-all mt-1" data-file="on.mp3" data-name="ON">
+                            <i class="fa-solid fa-play"></i>
+                        </button>
+                    </div>
+
+                    <!-- 6. Butter -->
+                    <div class="song-card bg-white/5 border border-white/10 rounded-2xl p-3 flex flex-col items-center text-center gap-2 shadow-md transition-all duration-300 hover:border-purple-400/40">
+                        <div class="w-full h-24 bg-gradient-to-br from-yellow-500 to-amber-700 rounded-xl flex items-center justify-center text-white text-xl overflow-hidden relative shadow">
+                            <img src="assets/imagenes/exitos/butter.jpg" alt="Butter" class="w-full h-full object-cover absolute inset-0" onerror="this.style.display='none'">
+                            <i class="fa-solid fa-compact-disc relative z-10 opacity-80"></i>
+                        </div>
+                        <span class="text-xs font-semibold text-white">Butter</span>
+                        <span class="text-[10px] text-stone-400">Butter Single · 2021</span>
+                        <button class="song-btn cursor-pointer bg-purple-600 hover:bg-purple-500 text-white w-7 h-7 rounded-full flex items-center justify-center text-xs shadow transition-all mt-1" data-file="butter.mp3" data-name="Butter">
+                            <i class="fa-solid fa-play"></i>
+                        </button>
+                    </div>
+
+                    <!-- 7. Permission to Dance -->
+                    <div class="song-card bg-white/5 border border-white/10 rounded-2xl p-3 flex flex-col items-center text-center gap-2 shadow-md transition-all duration-300 hover:border-purple-400/40">
+                        <div class="w-full h-24 bg-gradient-to-br from-indigo-500 to-purple-800 rounded-xl flex items-center justify-center text-white text-xl overflow-hidden relative shadow">
+                            <img src="assets/imagenes/exitos/ptd.jpg" alt="PTD" class="w-full h-full object-cover absolute inset-0" onerror="this.style.display='none'">
+                            <i class="fa-solid fa-compact-disc relative z-10 opacity-80"></i>
+                        </div>
+                        <span class="text-xs font-semibold text-white">Permission to Dance</span>
+                        <span class="text-[10px] text-stone-400">CD Single · 2021</span>
+                        <button class="song-btn cursor-pointer bg-purple-600 hover:bg-purple-500 text-white w-7 h-7 rounded-full flex items-center justify-center text-xs shadow transition-all mt-1" data-file="ptd.mp3" data-name="Permission to Dance">
+                            <i class="fa-solid fa-play"></i>
+                        </button>
+                    </div>
+
+                    <!-- 8. Dynamite -->
+                    <div class="song-card bg-white/5 border border-white/10 rounded-2xl p-3 flex flex-col items-center text-center gap-2 shadow-md transition-all duration-300 hover:border-purple-400/40">
+                        <div class="w-full h-24 bg-gradient-to-br from-rose-500 to-purple-900 rounded-xl flex items-center justify-center text-white text-xl overflow-hidden relative shadow">
+                            <img src="assets/imagenes/exitos/dynamite.jpg" alt="Dynamite" class="w-full h-full object-cover absolute inset-0" onerror="this.style.display='none'">
+                            <i class="fa-solid fa-compact-disc relative z-10 opacity-80"></i>
+                        </div>
+                        <span class="text-xs font-semibold text-white">Dynamite</span>
+                        <span class="text-[10px] text-stone-400">Dynamite · 2020</span>
+                        <button class="song-btn cursor-pointer bg-purple-600 hover:bg-purple-500 text-white w-7 h-7 rounded-full flex items-center justify-center text-xs shadow transition-all mt-1" data-file="dynamite.mp3" data-name="Dynamite">
+                            <i class="fa-solid fa-play"></i>
+                        </button>
+                    </div>
+
+                </div>
+            </div>
+        </div>
+
+
+        <!-- ================= SLIDE 6: NOSOTROS ================= -->
+        <div id="slide-nosotros" class="slide bg-gradient-to-br from-[#17102a] to-[#09050d] p-6 md:p-12 overflow-y-auto">
+            <div class="entrance bg-[#17102a]/90 backdrop-blur-xl border border-purple-400/20 rounded-[32px] w-full max-w-4xl p-6 md:p-10 shadow-2xl flex flex-col gap-6 my-auto relative overflow-hidden">
+
+                <!-- Decorative corner flowers -->
+                <div class="absolute -top-2 -left-2 text-3xl opacity-30 pointer-events-none rotate-[-15deg]">💜</div>
+                <div class="absolute -bottom-2 -right-2 text-3xl opacity-30 pointer-events-none rotate-[15deg]">💜</div>
+
+                <!-- Back Button -->
+                <div class="relative z-10">
+                    <button data-target="slide-menu" class="nav-btn cursor-pointer bg-white/10 hover:bg-white/20 text-stone-200 border border-white/20 py-2 px-5 rounded-full text-sm font-medium flex items-center gap-2 transition-all">
+                        <i class="fa-solid fa-arrow-left"></i> Volver
+                    </button>
+                </div>
+
+                <h2 class="serif-font text-3xl md:text-4xl text-white text-center font-bold relative z-10">
+                    Nosotros
+                </h2>
+
+                <!-- Romantic Letter Content -->
+                <div class="relative z-10 text-stone-200 serif-font italic text-base md:text-lg leading-relaxed flex flex-col gap-4 px-2">
+                    <p class="font-semibold not-italic">Querida [Su nombre]:</p>
+                    <p>Si esto fuera un álbum de BTS, tú serías mi canción favorita, la que repito sin cansarme.</p>
+                    <p>Gracias por compartir cada comeback, cada lágrima en un MV y cada baile torpe conmigo. Quiero seguir escribiendo nuestra historia, letra por letra, para siempre.</p>
+                    <p class="mt-2 not-italic">Con todo mi corazón morado,</p>
+                    <p class="text-purple-400 font-semibold not-italic">[Tu nombre] 💜</p>
+                </div>
+
+                <!-- Two Photos at Bottom (from assets/imagenes/) -->
+                <div class="relative z-10 flex justify-center gap-6 mt-4">
+                    <div class="w-36 h-24 bg-purple-900/40 border-2 border-dashed border-purple-400/50 rounded-2xl flex flex-col items-center justify-center text-stone-200 italic text-xs shadow-lg overflow-hidden relative hover:border-purple-300 transition-all duration-300">
+                        <img src="assets/imagenes/tu_foto.jpg" alt="Tu foto" class="w-full h-full object-cover absolute inset-0 opacity-80" onerror="this.style.display='none'">
+                        <i class="fa-regular fa-image text-purple-300 mb-1 relative z-10"></i>
+                        <span class="relative z-10">tu foto</span>
+                    </div>
+                    <div class="w-36 h-24 bg-purple-900/40 border-2 border-dashed border-purple-400/50 rounded-2xl flex flex-col items-center justify-center text-stone-200 italic text-xs shadow-lg overflow-hidden relative hover:border-purple-300 transition-all duration-300">
+                        <img src="assets/imagenes/su_foto.jpg" alt="Su foto" class="w-full h-full object-cover absolute inset-0 opacity-80" onerror="this.style.display='none'">
+                        <i class="fa-regular fa-image text-purple-300 mb-1 relative z-10"></i>
+                        <span class="relative z-10">su foto</span>
+                    </div>
+                </div>
+
+            </div>
+        </div>
+
+    </div>
+
+    <!-- ================= JAVASCRIPT LOGIC ================= -->
+    <script>
+
+        // Render the animated grass ground (SVG, injected once so the markup stays light)
+        function initGrass() {
+            const grassDay = document.getElementById('grass-inicio');
+            if (grassDay) grassDay.innerHTML = `<svg viewBox="0 0 1000 90" preserveAspectRatio="none" class="w-full h-full"><g class="grass-blade" style="animation-delay:0.42s;animation-duration:2.32s;opacity:0.55"><path d="M13.3 90 C 9.3 80.2, 9.2 76.2, 10.9 73.7" stroke="#4ade80" stroke-width="2.2" stroke-linecap="round" fill="none"/></g><g class="grass-blade" style="animation-delay:0.09s;animation-duration:2.46s;opacity:0.55"><path d="M36.8 90 C 32.8 77.1, 38.4 71.8, 37.8 68.5" stroke="#4ade80" stroke-width="2.2" stroke-linecap="round" fill="none"/></g><g class="grass-blade" style="animation-delay:2.1s;animation-duration:2.7s;opacity:0.55"><path d="M54.4 90 C 50.4 80.2, 49.0 76.2, 51.2 73.7" stroke="#86efac" stroke-width="2.2" stroke-linecap="round" fill="none"/></g><g class="grass-blade" style="animation-delay:2.09s;animation-duration:2.61s;opacity:0.55"><path d="M75.2 90 C 71.2 78.7, 81.9 74.0, 79.2 71.2" stroke="#4ade80" stroke-width="2.2" stroke-linecap="round" fill="none"/></g><g class="grass-blade" style="animation-delay:1.14s;animation-duration:2.63s;opacity:0.55"><path d="M91.8 90 C 87.8 74.7, 88.9 68.3, 90.1 64.4" stroke="#4ade80" stroke-width="2.2" stroke-linecap="round" fill="none"/></g><g class="grass-blade" style="animation-delay:1.61s;animation-duration:3.37s;opacity:0.55"><path d="M116.9 90 C 112.9 78.8, 108.6 74.2, 111.9 71.4" stroke="#22c55e" stroke-width="2.2" stroke-linecap="round" fill="none"/></g><g class="grass-blade" style="animation-delay:2.66s;animation-duration:2.63s;opacity:0.55"><path d="M139.2 90 C 135.2 77.1, 145.1 71.7, 142.7 68.5" stroke="#86efac" stroke-width="2.2" stroke-linecap="round" fill="none"/></g><g class="grass-blade" style="animation-delay:2.96s;animation-duration:3.23s;opacity:0.55"><path d="M157.7 90 C 153.7 80.0, 160.6 75.8, 159.4 73.3" stroke="#22c55e" stroke-width="2.2" stroke-linecap="round" fill="none"/></g><g class="grass-blade" style="animation-delay:0.49s;animation-duration:2.63s;opacity:0.55"><path d="M191.2 90 C 187.2 78.1, 190.3 73.2, 190.7 70.2" stroke="#22c55e" stroke-width="2.2" stroke-linecap="round" fill="none"/></g><g class="grass-blade" style="animation-delay:1.83s;animation-duration:2.41s;opacity:0.55"><path d="M209.5 90 C 205.5 76.2, 212.8 70.4, 211.5 67.0" stroke="#4ade80" stroke-width="2.2" stroke-linecap="round" fill="none"/></g><g class="grass-blade" style="animation-delay:2.06s;animation-duration:2.46s;opacity:0.55"><path d="M232.2 90 C 228.2 79.4, 230.1 75.0, 230.9 72.4" stroke="#86efac" stroke-width="2.2" stroke-linecap="round" fill="none"/></g><g class="grass-blade" style="animation-delay:2.42s;animation-duration:2.68s;opacity:0.55"><path d="M246.9 90 C 242.9 75.8, 239.0 69.9, 242.1 66.3" stroke="#4ade80" stroke-width="2.2" stroke-linecap="round" fill="none"/></g><g class="grass-blade" style="animation-delay:0.94s;animation-duration:2.99s;opacity:0.55"><path d="M264.2 90 C 260.2 74.9, 265.4 68.6, 264.9 64.9" stroke="#86efac" stroke-width="2.2" stroke-linecap="round" fill="none"/></g><g class="grass-blade" style="animation-delay:0.42s;animation-duration:3.09s;opacity:0.55"><path d="M291.7 90 C 287.7 74.9, 290.9 68.6, 291.2 64.9" stroke="#22c55e" stroke-width="2.2" stroke-linecap="round" fill="none"/></g><g class="grass-blade" style="animation-delay:1.2s;animation-duration:2.46s;opacity:0.55"><path d="M315.9 90 C 311.9 75.9, 314.6 70.1, 315.1 66.5" stroke="#86efac" stroke-width="2.2" stroke-linecap="round" fill="none"/></g><g class="grass-blade" style="animation-delay:2.58s;animation-duration:2.38s;opacity:0.55"><path d="M345.6 90 C 341.6 77.3, 338.2 72.1, 341.2 68.9" stroke="#4ade80" stroke-width="2.2" stroke-linecap="round" fill="none"/></g><g class="grass-blade" style="animation-delay:1.14s;animation-duration:3.4s;opacity:0.55"><path d="M352.8 90 C 348.8 76.3, 354.5 70.6, 353.8 67.2" stroke="#22c55e" stroke-width="2.2" stroke-linecap="round" fill="none"/></g><g class="grass-blade" style="animation-delay:2.04s;animation-duration:2.34s;opacity:0.55"><path d="M380.9 90 C 376.9 74.6, 387.4 68.1, 384.8 64.3" stroke="#4ade80" stroke-width="2.2" stroke-linecap="round" fill="none"/></g><g class="grass-blade" style="animation-delay:0.33s;animation-duration:2.72s;opacity:0.55"><path d="M408.9 90 C 404.9 75.9, 413.7 70.0, 411.8 66.5" stroke="#22c55e" stroke-width="2.2" stroke-linecap="round" fill="none"/></g><g class="grass-blade" style="animation-delay:2.92s;animation-duration:3.11s;opacity:0.55"><path d="M423.1 90 C 419.1 74.7, 429.9 68.3, 427.2 64.5" stroke="#22c55e" stroke-width="2.2" stroke-linecap="round" fill="none"/></g><g class="grass-blade" style="animation-delay:1.52s;animation-duration:2.44s;opacity:0.55"><path d="M445.8 90 C 441.8 79.8, 448.0 75.5, 447.1 72.9" stroke="#86efac" stroke-width="2.2" stroke-linecap="round" fill="none"/></g><g class="grass-blade" style="animation-delay:2.76s;animation-duration:2.92s;opacity:0.55"><path d="M465.2 90 C 461.2 79.4, 473.4 75.0, 470.1 72.4" stroke="#86efac" stroke-width="2.2" stroke-linecap="round" fill="none"/></g><g class="grass-blade" style="animation-delay:0.72s;animation-duration:2.49s;opacity:0.55"><path d="M488.9 90 C 484.9 79.7, 486.5 75.4, 487.5 72.9" stroke="#22c55e" stroke-width="2.2" stroke-linecap="round" fill="none"/></g><g class="grass-blade" style="animation-delay:2.93s;animation-duration:2.84s;opacity:0.55"><path d="M512.0 90 C 508.0 79.9, 516.2 75.7, 514.5 73.2" stroke="#4ade80" stroke-width="2.2" stroke-linecap="round" fill="none"/></g><g class="grass-blade" style="animation-delay:0.8s;animation-duration:3.25s;opacity:0.55"><path d="M526.1 90 C 522.1 76.4, 534.1 70.8, 530.9 67.4" stroke="#4ade80" stroke-width="2.2" stroke-linecap="round" fill="none"/></g><g class="grass-blade" style="animation-delay:2.07s;animation-duration:3.06s;opacity:0.55"><path d="M553.0 90 C 549.0 79.1, 553.7 74.6, 553.4 71.9" stroke="#86efac" stroke-width="2.2" stroke-linecap="round" fill="none"/></g><g class="grass-blade" style="animation-delay:1.35s;animation-duration:2.5s;opacity:0.55"><path d="M574.3 90 C 570.3 76.4, 572.1 70.7, 573.0 67.3" stroke="#86efac" stroke-width="2.2" stroke-linecap="round" fill="none"/></g><g class="grass-blade" style="animation-delay:0.66s;animation-duration:2.29s;opacity:0.55"><path d="M590.2 90 C 586.2 80.3, 591.2 76.2, 590.8 73.8" stroke="#86efac" stroke-width="2.2" stroke-linecap="round" fill="none"/></g><g class="grass-blade" style="animation-delay:0.21s;animation-duration:2.49s;opacity:0.55"><path d="M621.8 90 C 617.8 79.0, 629.1 74.5, 626.2 71.7" stroke="#22c55e" stroke-width="2.2" stroke-linecap="round" fill="none"/></g><g class="grass-blade" style="animation-delay:1.73s;animation-duration:2.49s;opacity:0.55"><path d="M644.2 90 C 640.2 79.1, 637.6 74.6, 640.3 71.9" stroke="#86efac" stroke-width="2.2" stroke-linecap="round" fill="none"/></g><g class="grass-blade" style="animation-delay:1.29s;animation-duration:2.71s;opacity:0.55"><path d="M662.6 90 C 658.6 78.0, 655.3 72.9, 658.2 69.9" stroke="#86efac" stroke-width="2.2" stroke-linecap="round" fill="none"/></g><g class="grass-blade" style="animation-delay:0.3s;animation-duration:2.68s;opacity:0.55"><path d="M684.2 90 C 680.2 76.0, 687.3 70.2, 686.1 66.7" stroke="#86efac" stroke-width="2.2" stroke-linecap="round" fill="none"/></g><g class="grass-blade" style="animation-delay:1.61s;animation-duration:2.37s;opacity:0.55"><path d="M703.7 90 C 699.7 75.2, 699.2 69.1, 701.0 65.4" stroke="#4ade80" stroke-width="2.2" stroke-linecap="round" fill="none"/></g><g class="grass-blade" style="animation-delay:1.33s;animation-duration:3.23s;opacity:0.55"><path d="M722.8 90 C 718.8 77.6, 729.5 72.5, 726.8 69.4" stroke="#4ade80" stroke-width="2.2" stroke-linecap="round" fill="none"/></g><g class="grass-blade" style="animation-delay:2.91s;animation-duration:3.31s;opacity:0.55"><path d="M750.9 90 C 746.9 80.1, 759.9 76.0, 756.3 73.5" stroke="#4ade80" stroke-width="2.2" stroke-linecap="round" fill="none"/></g><g class="grass-blade" style="animation-delay:2.59s;animation-duration:3.28s;opacity:0.55"><path d="M777.8 90 C 773.8 79.4, 777.5 75.0, 777.6 72.3" stroke="#4ade80" stroke-width="2.2" stroke-linecap="round" fill="none"/></g><g class="grass-blade" style="animation-delay:0.86s;animation-duration:3.04s;opacity:0.55"><path d="M787.6 90 C 783.6 80.4, 785.7 76.4, 786.5 74.0" stroke="#22c55e" stroke-width="2.2" stroke-linecap="round" fill="none"/></g><g class="grass-blade" style="animation-delay:0.46s;animation-duration:2.56s;opacity:0.55"><path d="M819.2 90 C 815.2 75.7, 822.1 69.7, 821.0 66.2" stroke="#22c55e" stroke-width="2.2" stroke-linecap="round" fill="none"/></g><g class="grass-blade" style="animation-delay:0.94s;animation-duration:2.26s;opacity:0.55"><path d="M845.1 90 C 841.1 76.9, 845.9 71.5, 845.6 68.2" stroke="#86efac" stroke-width="2.2" stroke-linecap="round" fill="none"/></g><g class="grass-blade" style="animation-delay:2.88s;animation-duration:2.3s;opacity:0.55"><path d="M858.3 90 C 854.3 74.9, 858.9 68.6, 858.6 64.8" stroke="#4ade80" stroke-width="2.2" stroke-linecap="round" fill="none"/></g><g class="grass-blade" style="animation-delay:1.21s;animation-duration:3.33s;opacity:0.55"><path d="M875.0 90 C 871.0 76.8, 878.1 71.3, 876.9 68.0" stroke="#4ade80" stroke-width="2.2" stroke-linecap="round" fill="none"/></g><g class="grass-blade" style="animation-delay:1.26s;animation-duration:2.9s;opacity:0.55"><path d="M903.4 90 C 899.4 76.9, 895.1 71.5, 898.4 68.2" stroke="#4ade80" stroke-width="2.2" stroke-linecap="round" fill="none"/></g><g class="grass-blade" style="animation-delay:0.94s;animation-duration:2.52s;opacity:0.55"><path d="M924.3 90 C 920.3 74.8, 919.0 68.5, 921.1 64.7" stroke="#86efac" stroke-width="2.2" stroke-linecap="round" fill="none"/></g><g class="grass-blade" style="animation-delay:0.03s;animation-duration:2.95s;opacity:0.55"><path d="M939.2 90 C 935.2 76.5, 938.5 70.9, 938.8 67.5" stroke="#4ade80" stroke-width="2.2" stroke-linecap="round" fill="none"/></g><g class="grass-blade" style="animation-delay:0.8s;animation-duration:3.32s;opacity:0.55"><path d="M968.5 90 C 964.5 79.8, 969.2 75.6, 968.9 73.0" stroke="#86efac" stroke-width="2.2" stroke-linecap="round" fill="none"/></g><g class="grass-blade" style="animation-delay:1.31s;animation-duration:2.85s;opacity:0.55"><path d="M995.8 90 C 991.8 75.1, 993.4 68.9, 994.3 65.2" stroke="#4ade80" stroke-width="2.2" stroke-linecap="round" fill="none"/></g><g class="grass-blade" style="animation-delay:0.02s;animation-duration:2.98s"><path d="M10.1 90 C 4.1 63.8, 19.3 49.5, 16.5 42.3" stroke="#22c55e" stroke-width="3.0" stroke-linecap="round" fill="none"/></g><g class="grass-blade" style="animation-delay:2.67s;animation-duration:2.89s"><path d="M48.0 90 C 42.0 64.3, 37.0 50.2, 40.3 43.2" stroke="#16a34a" stroke-width="2.8" stroke-linecap="round" fill="none"/></g><g class="grass-blade" style="animation-delay:1.9s;animation-duration:2.32s"><path d="M68.4 90 C 62.4 72.3, 63.7 62.6, 65.1 57.8" stroke="#22c55e" stroke-width="3.3" stroke-linecap="round" fill="none"/></g><g class="grass-blade" style="animation-delay:2.49s;animation-duration:2.05s"><path d="M112.5 90 C 106.5 65.3, 100.2 51.8, 103.9 45.1" stroke="#15803d" stroke-width="3.1" stroke-linecap="round" fill="none"/></g><g class="grass-blade" style="animation-delay:1.66s;animation-duration:2.51s"><path d="M123.7 90 C 117.7 63.8, 113.5 49.5, 116.6 42.4" stroke="#15803d" stroke-width="2.6" stroke-linecap="round" fill="none"/></g><g class="grass-blade" style="animation-delay:0.11s;animation-duration:2.44s"><path d="M151.8 90 C 145.8 64.9, 163.9 51.2, 160.3 44.3" stroke="#22c55e" stroke-width="3.4" stroke-linecap="round" fill="none"/></g><g class="grass-blade" style="animation-delay:2.7s;animation-duration:2.25s"><path d="M189.5 90 C 183.5 74.1, 185.5 65.5, 186.7 61.2" stroke="#16a34a" stroke-width="2.9" stroke-linecap="round" fill="none"/></g><g class="grass-blade" style="animation-delay:2.92s;animation-duration:2.9s"><path d="M211.2 90 C 205.2 66.0, 222.8 52.9, 219.3 46.4" stroke="#15803d" stroke-width="3.9" stroke-linecap="round" fill="none"/></g><g class="grass-blade" style="animation-delay:2.64s;animation-duration:2.03s"><path d="M243.8 90 C 237.8 72.8, 252.8 63.4, 250.1 58.7" stroke="#16a34a" stroke-width="3.6" stroke-linecap="round" fill="none"/></g><g class="grass-blade" style="animation-delay:2.43s;animation-duration:2.32s"><path d="M275.5 90 C 269.5 64.4, 284.5 50.4, 281.8 43.4" stroke="#22c55e" stroke-width="3.7" stroke-linecap="round" fill="none"/></g><g class="grass-blade" style="animation-delay:0.6s;animation-duration:3.1s"><path d="M299.6 90 C 293.6 65.0, 310.4 51.4, 307.1 44.6" stroke="#16a34a" stroke-width="3.1" stroke-linecap="round" fill="none"/></g><g class="grass-blade" style="animation-delay:0.58s;animation-duration:2.39s"><path d="M345.8 90 C 339.8 65.0, 337.5 51.4, 340.0 44.6" stroke="#22c55e" stroke-width="3.8" stroke-linecap="round" fill="none"/></g><g class="grass-blade" style="animation-delay:2.04s;animation-duration:3.01s"><path d="M378.6 90 C 372.6 71.5, 382.9 61.5, 381.6 56.4" stroke="#15803d" stroke-width="3.1" stroke-linecap="round" fill="none"/></g><g class="grass-blade" style="animation-delay:2.89s;animation-duration:2.32s"><path d="M385.9 90 C 379.9 65.0, 378.8 51.3, 380.9 44.5" stroke="#22c55e" stroke-width="2.8" stroke-linecap="round" fill="none"/></g><g class="grass-blade" style="animation-delay:2.95s;animation-duration:2.14s"><path d="M424.9 90 C 418.9 66.6, 419.3 53.8, 421.0 47.4" stroke="#22c55e" stroke-width="3.9" stroke-linecap="round" fill="none"/></g><g class="grass-blade" style="animation-delay:2.78s;animation-duration:2.65s"><path d="M448.6 90 C 442.6 74.1, 446.7 65.4, 447.2 61.1" stroke="#22c55e" stroke-width="3.6" stroke-linecap="round" fill="none"/></g><g class="grass-blade" style="animation-delay:2.85s;animation-duration:3.1s"><path d="M491.0 90 C 485.0 67.2, 486.9 54.8, 488.1 48.6" stroke="#16a34a" stroke-width="3.5" stroke-linecap="round" fill="none"/></g><g class="grass-blade" style="animation-delay:0.93s;animation-duration:2.49s"><path d="M518.6 90 C 512.6 73.2, 530.6 64.1, 527.0 59.5" stroke="#22c55e" stroke-width="3.2" stroke-linecap="round" fill="none"/></g><g class="grass-blade" style="animation-delay:2.03s;animation-duration:3.08s"><path d="M539.3 90 C 533.3 73.2, 536.9 64.0, 537.6 59.5" stroke="#15803d" stroke-width="3.5" stroke-linecap="round" fill="none"/></g><g class="grass-blade" style="animation-delay:0.63s;animation-duration:2.94s"><path d="M568.8 90 C 562.8 68.6, 553.9 56.9, 558.4 51.0" stroke="#15803d" stroke-width="3.4" stroke-linecap="round" fill="none"/></g><g class="grass-blade" style="animation-delay:1.42s;animation-duration:3.08s"><path d="M598.8 90 C 592.8 69.7, 604.0 58.7, 602.4 53.2" stroke="#22c55e" stroke-width="3.7" stroke-linecap="round" fill="none"/></g><g class="grass-blade" style="animation-delay:1.86s;animation-duration:2.11s"><path d="M624.6 90 C 618.6 73.7, 625.0 64.8, 624.9 60.3" stroke="#22c55e" stroke-width="3.9" stroke-linecap="round" fill="none"/></g><g class="grass-blade" style="animation-delay:0.07s;animation-duration:2.29s"><path d="M655.5 90 C 649.5 71.2, 664.7 60.9, 662.0 55.8" stroke="#16a34a" stroke-width="3.3" stroke-linecap="round" fill="none"/></g><g class="grass-blade" style="animation-delay:1.73s;animation-duration:2.86s"><path d="M699.4 90 C 693.4 73.8, 696.8 65.0, 697.6 60.5" stroke="#22c55e" stroke-width="3.1" stroke-linecap="round" fill="none"/></g><g class="grass-blade" style="animation-delay:2.34s;animation-duration:2.26s"><path d="M718.2 90 C 712.2 73.0, 723.9 63.7, 722.2 59.0" stroke="#16a34a" stroke-width="3.7" stroke-linecap="round" fill="none"/></g><g class="grass-blade" style="animation-delay:1.37s;animation-duration:2.96s"><path d="M754.6 90 C 748.6 69.5, 756.3 58.3, 755.8 52.7" stroke="#16a34a" stroke-width="3.5" stroke-linecap="round" fill="none"/></g><g class="grass-blade" style="animation-delay:1.84s;animation-duration:2.86s"><path d="M790.9 90 C 784.9 68.1, 804.4 56.1, 800.3 50.1" stroke="#15803d" stroke-width="3.3" stroke-linecap="round" fill="none"/></g><g class="grass-blade" style="animation-delay:2.58s;animation-duration:2.54s"><path d="M816.6 90 C 810.6 68.6, 828.5 56.9, 824.9 51.0" stroke="#22c55e" stroke-width="3.7" stroke-linecap="round" fill="none"/></g><g class="grass-blade" style="animation-delay:1.88s;animation-duration:2.33s"><path d="M846.2 90 C 840.2 71.5, 854.6 61.5, 852.1 56.5" stroke="#15803d" stroke-width="2.7" stroke-linecap="round" fill="none"/></g><g class="grass-blade" style="animation-delay:0.24s;animation-duration:2.18s"><path d="M862.6 90 C 856.6 71.6, 857.2 61.6, 858.8 56.6" stroke="#22c55e" stroke-width="3.1" stroke-linecap="round" fill="none"/></g><g class="grass-blade" style="animation-delay:1.63s;animation-duration:2.5s"><path d="M888.9 90 C 882.9 72.2, 886.3 62.6, 887.1 57.7" stroke="#15803d" stroke-width="2.9" stroke-linecap="round" fill="none"/></g><g class="grass-blade" style="animation-delay:0.06s;animation-duration:3.06s"><path d="M924.6 90 C 918.6 64.6, 927.1 50.8, 926.4 43.9" stroke="#22c55e" stroke-width="3.4" stroke-linecap="round" fill="none"/></g><g class="grass-blade" style="animation-delay:2.56s;animation-duration:3.14s"><path d="M955.3 90 C 949.3 64.2, 949.3 50.2, 951.1 43.1" stroke="#15803d" stroke-width="3.2" stroke-linecap="round" fill="none"/></g><g class="grass-blade" style="animation-delay:1.46s;animation-duration:2.33s"><path d="M991.1 90 C 985.1 68.6, 994.2 56.9, 993.3 51.1" stroke="#16a34a" stroke-width="3.3" stroke-linecap="round" fill="none"/></g></svg>`;
+            const grassNight = document.getElementById('grass-menu');
+            if (grassNight) grassNight.innerHTML = `<svg viewBox="0 0 1000 90" preserveAspectRatio="none" class="w-full h-full"><g class="grass-blade" style="animation-delay:2.46s;animation-duration:2.31s;opacity:0.55"><path d="M7.8 90 C 3.8 79.5, 10.5 75.1, 9.4 72.5" stroke="#1a5c33" stroke-width="2.2" stroke-linecap="round" fill="none"/></g><g class="grass-blade" style="animation-delay:1.3s;animation-duration:2.28s;opacity:0.55"><path d="M34.0 90 C 30.0 74.9, 28.9 68.7, 31.0 64.9" stroke="#1a5c33" stroke-width="2.2" stroke-linecap="round" fill="none"/></g><g class="grass-blade" style="animation-delay:2.84s;animation-duration:2.96s;opacity:0.55"><path d="M47.2 90 C 43.2 77.9, 53.1 72.8, 50.8 69.8" stroke="#1a5c33" stroke-width="2.2" stroke-linecap="round" fill="none"/></g><g class="grass-blade" style="animation-delay:2.93s;animation-duration:2.26s;opacity:0.55"><path d="M77.5 90 C 73.5 80.0, 79.1 75.9, 78.5 73.4" stroke="#1a5c33" stroke-width="2.2" stroke-linecap="round" fill="none"/></g><g class="grass-blade" style="animation-delay:1.71s;animation-duration:2.87s;opacity:0.55"><path d="M104.1 90 C 100.1 78.7, 97.7 73.9, 100.2 71.1" stroke="#1a5c33" stroke-width="2.2" stroke-linecap="round" fill="none"/></g><g class="grass-blade" style="animation-delay:1.12s;animation-duration:2.86s;opacity:0.55"><path d="M122.7 90 C 118.7 79.8, 124.0 75.5, 123.5 73.0" stroke="#1a5c33" stroke-width="2.2" stroke-linecap="round" fill="none"/></g><g class="grass-blade" style="animation-delay:1.6s;animation-duration:3.13s;opacity:0.55"><path d="M133.7 90 C 129.7 80.0, 128.4 75.9, 130.5 73.4" stroke="#134e2a" stroke-width="2.2" stroke-linecap="round" fill="none"/></g><g class="grass-blade" style="animation-delay:2.38s;animation-duration:3.04s;opacity:0.55"><path d="M162.4 90 C 158.4 74.9, 160.0 68.6, 161.0 64.8" stroke="#1a5c33" stroke-width="2.2" stroke-linecap="round" fill="none"/></g><g class="grass-blade" style="animation-delay:2.19s;animation-duration:2.55s;opacity:0.55"><path d="M180.3 90 C 176.3 77.0, 180.8 71.5, 180.6 68.3" stroke="#22703f" stroke-width="2.2" stroke-linecap="round" fill="none"/></g><g class="grass-blade" style="animation-delay:0.46s;animation-duration:2.79s;opacity:0.55"><path d="M214.9 90 C 210.9 79.7, 213.4 75.4, 214.0 72.8" stroke="#22703f" stroke-width="2.2" stroke-linecap="round" fill="none"/></g><g class="grass-blade" style="animation-delay:2.37s;animation-duration:3.18s;opacity:0.55"><path d="M220.2 90 C 216.2 76.4, 225.0 70.7, 223.1 67.3" stroke="#134e2a" stroke-width="2.2" stroke-linecap="round" fill="none"/></g><g class="grass-blade" style="animation-delay:0.21s;animation-duration:2.31s;opacity:0.55"><path d="M247.2 90 C 243.2 78.3, 247.2 73.4, 247.2 70.5" stroke="#22703f" stroke-width="2.2" stroke-linecap="round" fill="none"/></g><g class="grass-blade" style="animation-delay:2.1s;animation-duration:2.98s;opacity:0.55"><path d="M267.7 90 C 263.7 76.2, 259.9 70.5, 263.0 67.0" stroke="#134e2a" stroke-width="2.2" stroke-linecap="round" fill="none"/></g><g class="grass-blade" style="animation-delay:2.66s;animation-duration:2.62s;opacity:0.55"><path d="M302.1 90 C 298.1 75.5, 298.2 69.4, 299.7 65.8" stroke="#22703f" stroke-width="2.2" stroke-linecap="round" fill="none"/></g><g class="grass-blade" style="animation-delay:0.18s;animation-duration:3.12s;opacity:0.55"><path d="M322.9 90 C 318.9 78.3, 324.9 73.4, 324.1 70.4" stroke="#22703f" stroke-width="2.2" stroke-linecap="round" fill="none"/></g><g class="grass-blade" style="animation-delay:0.24s;animation-duration:2.74s;opacity:0.55"><path d="M330.5 90 C 326.5 78.9, 328.5 74.3, 329.3 71.5" stroke="#22703f" stroke-width="2.2" stroke-linecap="round" fill="none"/></g><g class="grass-blade" style="animation-delay:0.84s;animation-duration:2.7s;opacity:0.55"><path d="M359.6 90 C 355.6 75.1, 365.3 68.9, 363.0 65.2" stroke="#134e2a" stroke-width="2.2" stroke-linecap="round" fill="none"/></g><g class="grass-blade" style="animation-delay:0.25s;animation-duration:2.38s;opacity:0.55"><path d="M378.0 90 C 374.0 75.1, 386.2 68.9, 382.9 65.2" stroke="#1a5c33" stroke-width="2.2" stroke-linecap="round" fill="none"/></g><g class="grass-blade" style="animation-delay:0.79s;animation-duration:2.2s;opacity:0.55"><path d="M404.9 90 C 400.9 80.3, 410.9 76.3, 408.5 73.9" stroke="#1a5c33" stroke-width="2.2" stroke-linecap="round" fill="none"/></g><g class="grass-blade" style="animation-delay:2.07s;animation-duration:2.82s;opacity:0.55"><path d="M422.5 90 C 418.5 78.2, 423.7 73.3, 423.2 70.3" stroke="#1a5c33" stroke-width="2.2" stroke-linecap="round" fill="none"/></g><g class="grass-blade" style="animation-delay:2.39s;animation-duration:2.67s;opacity:0.55"><path d="M447.7 90 C 443.7 76.3, 439.7 70.7, 442.9 67.2" stroke="#134e2a" stroke-width="2.2" stroke-linecap="round" fill="none"/></g><g class="grass-blade" style="animation-delay:0.57s;animation-duration:3.38s;opacity:0.55"><path d="M465.6 90 C 461.6 79.8, 468.1 75.5, 467.1 73.0" stroke="#1a5c33" stroke-width="2.2" stroke-linecap="round" fill="none"/></g><g class="grass-blade" style="animation-delay:0.0s;animation-duration:2.38s;opacity:0.55"><path d="M488.1 90 C 484.1 79.7, 489.9 75.5, 489.2 72.9" stroke="#1a5c33" stroke-width="2.2" stroke-linecap="round" fill="none"/></g><g class="grass-blade" style="animation-delay:1.84s;animation-duration:2.38s;opacity:0.55"><path d="M503.9 90 C 499.9 78.2, 495.4 73.3, 498.8 70.4" stroke="#1a5c33" stroke-width="2.2" stroke-linecap="round" fill="none"/></g><g class="grass-blade" style="animation-delay:0.35s;animation-duration:2.79s;opacity:0.55"><path d="M528.3 90 C 524.3 78.3, 525.9 73.4, 526.8 70.5" stroke="#1a5c33" stroke-width="2.2" stroke-linecap="round" fill="none"/></g><g class="grass-blade" style="animation-delay:0.31s;animation-duration:2.61s;opacity:0.55"><path d="M562.7 90 C 558.7 77.5, 559.3 72.3, 560.6 69.2" stroke="#1a5c33" stroke-width="2.2" stroke-linecap="round" fill="none"/></g><g class="grass-blade" style="animation-delay:0.62s;animation-duration:3.34s;opacity:0.55"><path d="M572.0 90 C 568.0 75.4, 565.9 69.4, 568.3 65.7" stroke="#1a5c33" stroke-width="2.2" stroke-linecap="round" fill="none"/></g><g class="grass-blade" style="animation-delay:0.89s;animation-duration:2.97s;opacity:0.55"><path d="M595.4 90 C 591.4 76.3, 602.9 70.5, 599.9 67.1" stroke="#134e2a" stroke-width="2.2" stroke-linecap="round" fill="none"/></g><g class="grass-blade" style="animation-delay:1.07s;animation-duration:2.47s;opacity:0.55"><path d="M612.5 90 C 608.5 75.3, 612.8 69.2, 612.7 65.5" stroke="#1a5c33" stroke-width="2.2" stroke-linecap="round" fill="none"/></g><g class="grass-blade" style="animation-delay:2.43s;animation-duration:3.38s;opacity:0.55"><path d="M642.0 90 C 638.0 77.4, 644.5 72.1, 643.5 69.0" stroke="#134e2a" stroke-width="2.2" stroke-linecap="round" fill="none"/></g><g class="grass-blade" style="animation-delay:2.41s;animation-duration:2.44s;opacity:0.55"><path d="M669.2 90 C 665.2 75.6, 674.9 69.5, 672.6 65.9" stroke="#134e2a" stroke-width="2.2" stroke-linecap="round" fill="none"/></g><g class="grass-blade" style="animation-delay:1.42s;animation-duration:2.43s;opacity:0.55"><path d="M684.7 90 C 680.7 76.0, 693.5 70.2, 689.9 66.7" stroke="#22703f" stroke-width="2.2" stroke-linecap="round" fill="none"/></g><g class="grass-blade" style="animation-delay:2.96s;animation-duration:3.35s;opacity:0.55"><path d="M708.4 90 C 704.4 78.3, 713.9 73.5, 711.7 70.6" stroke="#134e2a" stroke-width="2.2" stroke-linecap="round" fill="none"/></g><g class="grass-blade" style="animation-delay:1.01s;animation-duration:2.78s;opacity:0.55"><path d="M725.9 90 C 721.9 79.1, 721.0 74.5, 723.0 71.8" stroke="#1a5c33" stroke-width="2.2" stroke-linecap="round" fill="none"/></g><g class="grass-blade" style="animation-delay:1.03s;animation-duration:2.97s;opacity:0.55"><path d="M758.4 90 C 754.4 76.7, 749.5 71.2, 753.1 67.9" stroke="#134e2a" stroke-width="2.2" stroke-linecap="round" fill="none"/></g><g class="grass-blade" style="animation-delay:2.25s;animation-duration:2.77s;opacity:0.55"><path d="M777.6 90 C 773.6 79.7, 775.6 75.4, 776.4 72.8" stroke="#134e2a" stroke-width="2.2" stroke-linecap="round" fill="none"/></g><g class="grass-blade" style="animation-delay:1.19s;animation-duration:2.68s;opacity:0.55"><path d="M787.9 90 C 783.9 75.7, 784.9 69.7, 786.1 66.1" stroke="#134e2a" stroke-width="2.2" stroke-linecap="round" fill="none"/></g><g class="grass-blade" style="animation-delay:0.08s;animation-duration:2.91s;opacity:0.55"><path d="M823.0 90 C 819.0 76.1, 817.0 70.2, 819.4 66.8" stroke="#1a5c33" stroke-width="2.2" stroke-linecap="round" fill="none"/></g><g class="grass-blade" style="animation-delay:2.94s;animation-duration:2.99s;opacity:0.55"><path d="M836.4 90 C 832.4 76.5, 838.4 70.8, 837.6 67.4" stroke="#134e2a" stroke-width="2.2" stroke-linecap="round" fill="none"/></g><g class="grass-blade" style="animation-delay:2.4s;animation-duration:3.07s;opacity:0.55"><path d="M856.1 90 C 852.1 77.1, 849.5 71.7, 852.1 68.5" stroke="#1a5c33" stroke-width="2.2" stroke-linecap="round" fill="none"/></g><g class="grass-blade" style="animation-delay:2.48s;animation-duration:2.45s;opacity:0.55"><path d="M873.5 90 C 869.5 75.9, 867.0 70.0, 869.6 66.5" stroke="#1a5c33" stroke-width="2.2" stroke-linecap="round" fill="none"/></g><g class="grass-blade" style="animation-delay:0.98s;animation-duration:2.85s;opacity:0.55"><path d="M897.9 90 C 893.9 78.6, 893.2 73.9, 895.1 71.1" stroke="#134e2a" stroke-width="2.2" stroke-linecap="round" fill="none"/></g><g class="grass-blade" style="animation-delay:1.99s;animation-duration:3.18s;opacity:0.55"><path d="M929.7 90 C 925.7 80.0, 934.0 75.9, 932.3 73.4" stroke="#22703f" stroke-width="2.2" stroke-linecap="round" fill="none"/></g><g class="grass-blade" style="animation-delay:1.6s;animation-duration:2.83s;opacity:0.55"><path d="M945.9 90 C 941.9 75.4, 952.8 69.4, 950.0 65.7" stroke="#1a5c33" stroke-width="2.2" stroke-linecap="round" fill="none"/></g><g class="grass-blade" style="animation-delay:2.33s;animation-duration:2.38s;opacity:0.55"><path d="M959.0 90 C 955.0 77.8, 953.3 72.7, 955.6 69.6" stroke="#1a5c33" stroke-width="2.2" stroke-linecap="round" fill="none"/></g><g class="grass-blade" style="animation-delay:0.98s;animation-duration:2.82s;opacity:0.55"><path d="M982.9 90 C 978.9 76.7, 976.1 71.1, 978.8 67.8" stroke="#1a5c33" stroke-width="2.2" stroke-linecap="round" fill="none"/></g><g class="grass-blade" style="animation-delay:0.17s;animation-duration:2.23s"><path d="M16.0 90 C 10.0 66.0, 4.2 52.9, 7.7 46.3" stroke="#1a4d28" stroke-width="2.7" stroke-linecap="round" fill="none"/></g><g class="grass-blade" style="animation-delay:1.33s;animation-duration:2.74s"><path d="M34.7 90 C 28.7 69.6, 20.5 58.5, 24.7 53.0" stroke="#0f3d21" stroke-width="3.3" stroke-linecap="round" fill="none"/></g><g class="grass-blade" style="animation-delay:2.42s;animation-duration:2.61s"><path d="M73.8 90 C 67.8 67.0, 72.4 54.4, 72.8 48.1" stroke="#1a4d28" stroke-width="2.9" stroke-linecap="round" fill="none"/></g><g class="grass-blade" style="animation-delay:2.68s;animation-duration:2.24s"><path d="M103.5 90 C 97.5 65.0, 116.3 51.3, 112.5 44.5" stroke="#1a4d28" stroke-width="3.2" stroke-linecap="round" fill="none"/></g><g class="grass-blade" style="animation-delay:0.72s;animation-duration:2.09s"><path d="M130.4 90 C 124.4 70.3, 124.9 59.5, 126.5 54.2" stroke="#1a4d28" stroke-width="3.5" stroke-linecap="round" fill="none"/></g><g class="grass-blade" style="animation-delay:1.93s;animation-duration:2.44s"><path d="M168.4 90 C 162.4 64.7, 158.1 51.0, 161.2 44.1" stroke="#1a4d28" stroke-width="3.0" stroke-linecap="round" fill="none"/></g><g class="grass-blade" style="animation-delay:1.19s;animation-duration:2.58s"><path d="M182.6 90 C 176.6 69.5, 190.0 58.2, 187.8 52.6" stroke="#0f3d21" stroke-width="4.0" stroke-linecap="round" fill="none"/></g><g class="grass-blade" style="animation-delay:1.21s;animation-duration:2.51s"><path d="M228.4 90 C 222.4 72.8, 226.4 63.5, 227.0 58.8" stroke="#1a4d28" stroke-width="3.1" stroke-linecap="round" fill="none"/></g><g class="grass-blade" style="animation-delay:1.32s;animation-duration:2.02s"><path d="M240.4 90 C 234.4 70.6, 235.5 60.0, 237.0 54.7" stroke="#153d20" stroke-width="3.1" stroke-linecap="round" fill="none"/></g><g class="grass-blade" style="animation-delay:2.92s;animation-duration:2.13s"><path d="M282.3 90 C 276.3 69.0, 269.3 57.5, 273.2 51.8" stroke="#0f3d21" stroke-width="3.0" stroke-linecap="round" fill="none"/></g><g class="grass-blade" style="animation-delay:2.46s;animation-duration:3.02s"><path d="M298.0 90 C 292.0 66.0, 291.1 53.0, 293.2 46.4" stroke="#0f3d21" stroke-width="3.5" stroke-linecap="round" fill="none"/></g><g class="grass-blade" style="animation-delay:1.71s;animation-duration:2.84s"><path d="M348.7 90 C 342.7 70.1, 349.8 59.3, 349.5 53.9" stroke="#1a4d28" stroke-width="2.7" stroke-linecap="round" fill="none"/></g><g class="grass-blade" style="animation-delay:0.81s;animation-duration:2.02s"><path d="M357.2 90 C 351.2 67.0, 355.0 54.5, 355.7 48.2" stroke="#0f3d21" stroke-width="2.7" stroke-linecap="round" fill="none"/></g><g class="grass-blade" style="animation-delay:2.59s;animation-duration:2.54s"><path d="M391.4 90 C 385.4 67.9, 383.1 55.9, 385.6 49.8" stroke="#153d20" stroke-width="3.1" stroke-linecap="round" fill="none"/></g><g class="grass-blade" style="animation-delay:0.13s;animation-duration:2.85s"><path d="M427.7 90 C 421.7 64.4, 420.8 50.4, 422.8 43.5" stroke="#0f3d21" stroke-width="3.9" stroke-linecap="round" fill="none"/></g><g class="grass-blade" style="animation-delay:1.89s;animation-duration:2.64s"><path d="M466.9 90 C 460.9 71.7, 457.4 61.7, 460.2 56.8" stroke="#153d20" stroke-width="2.9" stroke-linecap="round" fill="none"/></g><g class="grass-blade" style="animation-delay:2.98s;animation-duration:2.04s"><path d="M484.0 90 C 478.0 67.2, 477.1 54.8, 479.2 48.6" stroke="#0f3d21" stroke-width="2.6" stroke-linecap="round" fill="none"/></g><g class="grass-blade" style="animation-delay:2.8s;animation-duration:2.13s"><path d="M514.8 90 C 508.8 63.8, 515.3 49.6, 515.1 42.4" stroke="#0f3d21" stroke-width="3.7" stroke-linecap="round" fill="none"/></g><g class="grass-blade" style="animation-delay:2.91s;animation-duration:2.37s"><path d="M542.5 90 C 536.5 69.2, 552.6 57.8, 549.5 52.1" stroke="#153d20" stroke-width="2.9" stroke-linecap="round" fill="none"/></g><g class="grass-blade" style="animation-delay:1.91s;animation-duration:2.49s"><path d="M567.2 90 C 561.2 72.4, 578.6 62.8, 575.2 58.0" stroke="#1a4d28" stroke-width="3.1" stroke-linecap="round" fill="none"/></g><g class="grass-blade" style="animation-delay:2.64s;animation-duration:2.52s"><path d="M592.5 90 C 586.5 73.2, 579.6 64.0, 583.4 59.4" stroke="#1a4d28" stroke-width="2.7" stroke-linecap="round" fill="none"/></g><g class="grass-blade" style="animation-delay:1.8s;animation-duration:2.83s"><path d="M636.2 90 C 630.2 70.4, 636.4 59.7, 636.4 54.4" stroke="#153d20" stroke-width="2.7" stroke-linecap="round" fill="none"/></g><g class="grass-blade" style="animation-delay:2.89s;animation-duration:3.17s"><path d="M654.4 90 C 648.4 71.6, 639.5 61.6, 643.9 56.6" stroke="#153d20" stroke-width="3.4" stroke-linecap="round" fill="none"/></g><g class="grass-blade" style="animation-delay:0.55s;animation-duration:2.4s"><path d="M685.2 90 C 679.2 64.0, 679.4 49.8, 681.2 42.7" stroke="#153d20" stroke-width="2.7" stroke-linecap="round" fill="none"/></g><g class="grass-blade" style="animation-delay:0.27s;animation-duration:2.98s"><path d="M715.4 90 C 709.4 67.4, 707.8 55.0, 710.1 48.9" stroke="#0f3d21" stroke-width="2.8" stroke-linecap="round" fill="none"/></g><g class="grass-blade" style="animation-delay:0.7s;animation-duration:2.7s"><path d="M752.0 90 C 746.0 70.3, 746.0 59.5, 747.8 54.1" stroke="#1a4d28" stroke-width="3.3" stroke-linecap="round" fill="none"/></g><g class="grass-blade" style="animation-delay:1.17s;animation-duration:2.39s"><path d="M785.3 90 C 779.3 67.4, 791.8 55.0, 789.8 48.8" stroke="#1a4d28" stroke-width="4.0" stroke-linecap="round" fill="none"/></g><g class="grass-blade" style="animation-delay:2.47s;animation-duration:2.86s"><path d="M800.6 90 C 794.6 66.6, 804.9 53.9, 803.6 47.5" stroke="#0f3d21" stroke-width="3.3" stroke-linecap="round" fill="none"/></g><g class="grass-blade" style="animation-delay:2.26s;animation-duration:2.68s"><path d="M836.6 90 C 830.6 66.9, 836.7 54.3, 836.7 48.0" stroke="#1a4d28" stroke-width="3.7" stroke-linecap="round" fill="none"/></g><g class="grass-blade" style="animation-delay:2.05s;animation-duration:2.83s"><path d="M856.3 90 C 850.3 67.0, 865.2 54.5, 862.5 48.3" stroke="#1a4d28" stroke-width="2.9" stroke-linecap="round" fill="none"/></g><g class="grass-blade" style="animation-delay:1.13s;animation-duration:2.54s"><path d="M886.0 90 C 880.0 73.1, 881.8 63.9, 883.1 59.3" stroke="#0f3d21" stroke-width="2.7" stroke-linecap="round" fill="none"/></g><g class="grass-blade" style="animation-delay:0.01s;animation-duration:2.96s"><path d="M915.1 90 C 909.1 68.8, 907.5 57.2, 909.8 51.4" stroke="#153d20" stroke-width="3.6" stroke-linecap="round" fill="none"/></g><g class="grass-blade" style="animation-delay:2.24s;animation-duration:2.57s"><path d="M956.0 90 C 950.0 68.7, 960.7 57.1, 959.3 51.3" stroke="#0f3d21" stroke-width="3.7" stroke-linecap="round" fill="none"/></g><g class="grass-blade" style="animation-delay:2.22s;animation-duration:3.17s"><path d="M993.4 90 C 987.4 72.0, 1001.1 62.2, 998.8 57.3" stroke="#0f3d21" stroke-width="3.3" stroke-linecap="round" fill="none"/></g></svg>`;
+        }
+
+        // Slide Navigation Helper
+        function goToSlide(slideId) {
+            document.querySelectorAll('.slide').forEach(s => s.classList.remove('active'));
+            const targetSlide = document.getElementById(slideId);
+            if (targetSlide) {
+                targetSlide.classList.add('active');
+            }
+        }
+
+        // Audio controls
+        const audioInicio = document.getElementById('audio-inicio');
+        const audioMenu = document.getElementById('audio-menu');
+        const audioExitos = document.getElementById('audio-exitos');
+
+        // Autoplay initial yellow flowers music on load
+        window.addEventListener('load', () => {
+            if (audioInicio) {
+                audioInicio.volume = 0.4;
+                audioInicio.play().catch(e => {
+                    console.log("Autoplay prevented by browser, user interaction required.");
+                });
+            }
+            initGrass();
+            initThreeUniverse();
+            setupEventListeners();
+        });
+
+        function setupEventListeners() {
+            // Start experience button
+            const startBtn = document.getElementById('start-btn');
+            if (startBtn) {
+                startBtn.addEventListener('click', () => {
+                    if (audioInicio) {
+                        audioInicio.pause();
+                        audioInicio.currentTime = 0;
+                    }
+                    goToSlide('slide-transicion');
+                });
+            }
+
+            // Transition continue button
+            const continueTransBtn = document.querySelector('#slide-transicion button');
+            if (continueTransBtn) {
+                continueTransBtn.addEventListener('click', () => {
+                    goToSlide('slide-menu');
+                    if (audioMenu) {
+                        audioMenu.volume = 0.5;
+                        audioMenu.play().catch(e => console.log("Menu audio play error:", e));
+                    }
+                });
+            }
+
+            // General navigation buttons
+            document.querySelectorAll('.nav-btn').forEach(btn => {
+                btn.addEventListener('click', () => {
+                    const target = btn.getAttribute('data-target');
+                    if (target) goToSlide(target);
+                });
+            });
+
+            // Menu audio toggles
+            const menuAudioBtn = document.getElementById('menu-audio-btn');
+            if (menuAudioBtn) {
+                menuAudioBtn.addEventListener('click', () => {
+                    if (!audioMenu) return;
+                    if (audioMenu.paused) {
+                        audioMenu.play().then(() => {
+                            menuAudioBtn.innerHTML = '<i class="fa-solid fa-pause text-xs"></i>';
+                        }).catch(e => {
+                            console.log("Menu audio play error:", e);
+                            menuAudioBtn.innerHTML = '<i class="fa-solid fa-play text-xs"></i>';
+                        });
+                    } else {
+                        audioMenu.pause();
+                        menuAudioBtn.innerHTML = '<i class="fa-solid fa-play text-xs"></i>';
+                    }
+                });
+            }
+
+            const menuStopBtn = document.getElementById('menu-stop-btn');
+            if (menuStopBtn) {
+                menuStopBtn.addEventListener('click', () => {
+                    if (audioMenu) {
+                        audioMenu.pause();
+                        audioMenu.currentTime = 0;
+                    }
+                    if (menuAudioBtn) {
+                        menuAudioBtn.innerHTML = '<i class="fa-solid fa-play text-xs"></i>';
+                    }
+                });
+            }
+
+            // Song playback buttons
+            document.querySelectorAll('.song-btn').forEach(btn => {
+                btn.addEventListener('click', () => {
+                    const filename = btn.getAttribute('data-file');
+                    const songName = btn.getAttribute('data-name');
+                    if (audioMenu) audioMenu.pause();
+                    if (audioExitos) {
+                        audioExitos.src = `assets/musica/exitos/${filename}`;
+                        audioExitos.volume = 0.7;
+                        audioExitos.play().catch(e => {
+                            console.log(`Note: Local audio file assets/musica/exitos/${filename} not found.`);
+                        });
+                    }
+
+                    // Highlight the currently playing track card
+                    document.querySelectorAll('.song-card').forEach(card => card.classList.remove('is-playing'));
+                    document.querySelectorAll('.song-btn i').forEach(icon => {
+                        icon.classList.remove('fa-pause');
+                        icon.classList.add('fa-play');
+                    });
+                    const parentCard = btn.closest('.song-card');
+                    if (parentCard) parentCard.classList.add('is-playing');
+                    const icon = btn.querySelector('i');
+                    if (icon) {
+                        icon.classList.remove('fa-play');
+                        icon.classList.add('fa-pause');
+                    }
+                });
+            });
+        }
+
+
+        /* ================= THREE.JS 3D UNIVERSE BACKGROUND ================= */
+        function initThreeUniverse() {
+            const container = document.getElementById('universe-container');
+            if (!container) return;
+
+            const scene = new THREE.Scene();
+            const camera = new THREE.PerspectiveCamera(60, window.innerWidth / window.innerHeight, 0.1, 1000);
+            const renderer = new THREE.WebGLRenderer({ alpha: true, antialias: true });
+            renderer.setSize(window.innerWidth, window.innerHeight);
+            renderer.setPixelRatio(window.devicePixelRatio);
+            container.appendChild(renderer.domElement);
+
+            // Lighting
+            const ambientLight = new THREE.AmbientLight(0xffffff, 0.8);
+            scene.add(ambientLight);
+
+            const sunLight = new THREE.PointLight(0xfde047, 2, 300);
+            sunLight.position.set(0, 0, 0);
+            scene.add(sunLight);
+
+            // Glowing Gold Sun at center
+            const sunGeo = new THREE.SphereGeometry(6, 32, 32);
+            const sunMat = new THREE.MeshBasicMaterial({ color: 0xfde047 });
+            const sun = new THREE.Mesh(sunGeo, sunMat);
+            scene.add(sun);
+
+            // Planets orbiting configuration
+            const planetsData = [
+                { radius: 1.5, distance: 18, color: 0xa855f7, speed: 0.012, ring: true },  // Purple
+                { radius: 2.2, distance: 28, color: 0xec4899, speed: 0.009, ring: false }, // Pink
+                { radius: 1.2, distance: 38, color: 0x38bdf8, speed: 0.007, ring: false }, // Blue
+                { radius: 2.8, distance: 50, color: 0xd97706, speed: 0.005, ring: true },  // Cobre/Gold
+                { radius: 1.8, distance: 62, color: 0xc084fc, speed: 0.004, ring: false }, // Lila
+                { radius: 2.0, distance: 75, color: 0x6366f1, speed: 0.003, ring: false }  // Indigo
+            ];
+
+            const planets = [];
+
+            planetsData.forEach(data => {
+                const pivot = new THREE.Group();
+                scene.add(pivot);
+
+                const geometry = new THREE.SphereGeometry(data.radius, 24, 24);
+                const material = new THREE.MeshStandardMaterial({ color: data.color, roughness: 0.4 });
+                const mesh = new THREE.Mesh(geometry, material);
+                mesh.position.x = data.distance;
+                pivot.add(mesh);
+
+                if (data.ring) {
+                    const ringGeo = new THREE.RingGeometry(data.radius * 1.4, data.radius * 2.2, 32);
+                    const ringMat = new THREE.MeshBasicMaterial({ color: data.color, side: THREE.DoubleSide, transparent: true, opacity: 0.6 });
+                    const ring = new THREE.Mesh(ringGeo, ringMat);
+                    ring.rotation.x = Math.PI / 2;
+                    mesh.add(ring);
+                }
+
+                planets.push({ pivot, speed: data.speed });
+            });
+
+            // Starfield particles
+            const starsGeo = new THREE.BufferGeometry();
+            const starsCount = 1200;
+            const starPositions = new Float32Array(starsCount * 3);
+
+            for(let i = 0; i < starsCount * 3; i++) {
+                starPositions[i] = (Math.random() - 0.5) * 400;
+            }
+
+            starsGeo.setAttribute('position', new THREE.BufferAttribute(starPositions, 3));
+            const starsMat = new THREE.PointsMaterial({ color: 0xffffff, size: 0.8, transparent: true, opacity: 0.8 });
+            const starField = new THREE.Points(starsGeo, starsMat);
+            scene.add(starField);
+
+            camera.position.z = 70;
+            camera.position.y = 20;
+            camera.lookAt(0, 0, 0);
+
+            // Animation Loop
+            function animate() {
+                requestAnimationFrame(animate);
+
+                // Rotate planets around sun
+                planets.forEach(p => {
+                    p.pivot.rotation.y += p.speed;
+                });
+
+                // Slow starfield rotation
+                starField.rotation.y += 0.0005;
+
+                renderer.render(scene, camera);
+            }
+
+            animate();
+
+            // Resize handler
+            window.addEventListener('resize', () => {
+                camera.aspect = window.innerWidth / window.innerHeight;
+                camera.updateProjectionMatrix();
+                renderer.setSize(window.innerWidth, window.innerHeight);
+            });
+        }
+    </script>
+</body>
+</html>
